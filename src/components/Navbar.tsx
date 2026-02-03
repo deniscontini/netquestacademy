@@ -1,9 +1,13 @@
 import { Network, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -35,8 +39,20 @@ const Navbar = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost">Entrar</Button>
-            <Button variant="hero">Começar Grátis</Button>
+            {user ? (
+              <Button variant="hero" onClick={() => navigate("/dashboard")}>
+                Ir para Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => navigate("/auth")}>
+                  Entrar
+                </Button>
+                <Button variant="hero" onClick={() => navigate("/auth")}>
+                  Começar Grátis
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -65,8 +81,20 @@ const Navbar = () => {
                 Preços
               </a>
               <div className="flex gap-4 pt-4 border-t border-border">
-                <Button variant="ghost" className="flex-1">Entrar</Button>
-                <Button variant="hero" className="flex-1">Começar Grátis</Button>
+                {user ? (
+                  <Button variant="hero" className="flex-1" onClick={() => navigate("/dashboard")}>
+                    Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" className="flex-1" onClick={() => navigate("/auth")}>
+                      Entrar
+                    </Button>
+                    <Button variant="hero" className="flex-1" onClick={() => navigate("/auth")}>
+                      Começar Grátis
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
