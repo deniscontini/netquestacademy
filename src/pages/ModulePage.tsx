@@ -122,38 +122,68 @@ const ModulePage = () => {
 
           {/* Lessons Tab */}
           <TabsContent value="lessons" className="space-y-4">
-            {lessons.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhuma lição disponível ainda.
-                </CardContent>
-              </Card>
+            {selectedLesson && activeLesson ? (
+              <LessonContent
+                lesson={activeLesson}
+                lessonIndex={activeLessonIndex}
+                isCompleted={lessonProgressMap.get(activeLesson.id)?.is_completed}
+                onBack={() => setSelectedLesson(null)}
+                onComplete={() => handleCompleteLesson(activeLesson.id)}
+              />
             ) : (
-              lessons.map((lesson, index) => (
-                <Card key={lesson.id} variant="interactive" className="cursor-pointer">
-                  <CardContent className="py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{lesson.title}</h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {lesson.duration_minutes || 10} min
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Zap className="w-3 h-3" />
-                            +{lesson.xp_reward} XP
-                          </span>
-                        </div>
-                      </div>
-                      <Badge variant="outline">Em breve</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              <>
+                {lessons.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Nenhuma lição disponível ainda.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  lessons.map((lesson, index) => {
+                    const progress = lessonProgressMap.get(lesson.id);
+                    const isCompleted = progress?.is_completed || false;
+                    
+                    return (
+                      <Card 
+                        key={lesson.id} 
+                        variant="interactive" 
+                        className="cursor-pointer"
+                        onClick={() => setSelectedLesson(lesson.id)}
+                      >
+                        <CardContent className="py-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                              isCompleted 
+                                ? 'bg-accent/20 text-accent' 
+                                : 'bg-primary/10 text-primary'
+                            }`}>
+                              {isCompleted ? <CheckCircle className="w-5 h-5" /> : index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold">{lesson.title}</h3>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {lesson.duration_minutes || 10} min
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Zap className="w-3 h-3" />
+                                  +{lesson.xp_reward} XP
+                                </span>
+                              </div>
+                            </div>
+                            {isCompleted ? (
+                              <Badge variant="default" className="bg-accent text-accent-foreground">Concluída</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-primary border-primary">Iniciar</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </>
             )}
           </TabsContent>
 
