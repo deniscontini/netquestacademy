@@ -59,7 +59,19 @@ export const useSubmitLabCommand = () => {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const normalizedCommand = command.trim().toLowerCase();
+      // Client-side input validation (server also validates via trigger)
+      const MAX_COMMAND_LENGTH = 500;
+      let sanitizedCommand = command.trim();
+      
+      // Enforce length limit
+      if (sanitizedCommand.length > MAX_COMMAND_LENGTH) {
+        sanitizedCommand = sanitizedCommand.substring(0, MAX_COMMAND_LENGTH);
+      }
+      
+      // Remove HTML/script tags for safety
+      sanitizedCommand = sanitizedCommand.replace(/<[^>]*>/g, '');
+      
+      const normalizedCommand = sanitizedCommand.toLowerCase();
       const isCorrect = expectedCommands.some(
         expected => normalizedCommand === expected.toLowerCase()
       );
