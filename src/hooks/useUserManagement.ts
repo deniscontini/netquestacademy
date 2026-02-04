@@ -28,19 +28,22 @@ export const useCreateUser = () => {
     mutationFn: async (data: CreateUserData) => {
       const { data: session } = await supabase.auth.getSession();
       
-      const response = await supabase.functions.invoke("manage-users", {
-        body: data,
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify(data),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (!result.success) {
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to create user");
       }
 
@@ -60,19 +63,22 @@ export const useDeleteUser = () => {
     mutationFn: async (userId: string) => {
       const { data: session } = await supabase.auth.getSession();
       
-      const response = await supabase.functions.invoke("manage-users", {
-        body: { userId },
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=delete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ userId }),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (!result.success) {
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to delete user");
       }
 
@@ -92,19 +98,22 @@ export const useBatchCreateUsers = () => {
     mutationFn: async (users: CreateUserData[]): Promise<{ results: BatchCreateResult[] }> => {
       const { data: session } = await supabase.auth.getSession();
       
-      const response = await supabase.functions.invoke("manage-users", {
-        body: { users },
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=batch-create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ users }),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (!result.success) {
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to create users");
       }
 
@@ -124,19 +133,22 @@ export const useBatchDeleteUsers = () => {
     mutationFn: async (userIds: string[]): Promise<{ results: BatchDeleteResult[] }> => {
       const { data: session } = await supabase.auth.getSession();
       
-      const response = await supabase.functions.invoke("manage-users", {
-        body: { userIds },
-        headers: {
-          Authorization: `Bearer ${session.session?.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=batch-delete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ userIds }),
+        }
+      );
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-
-      const result = response.data;
-      if (!result.success) {
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to delete users");
       }
 
