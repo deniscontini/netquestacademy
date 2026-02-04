@@ -134,7 +134,7 @@ const Auth = () => {
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Network className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">NetQuest</span>
+            <span className="text-2xl font-bold">NetOps Academy</span>
           </div>
         </div>
 

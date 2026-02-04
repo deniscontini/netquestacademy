@@ -67,7 +67,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border mt-12 pt-8 text-center text-sm text-muted-foreground">
-          <p>© 2026 NetQuest. Todos os direitos reservados.</p>
+          <p>© 2026 NetOps Academy. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

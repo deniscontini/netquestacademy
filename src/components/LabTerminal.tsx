@@ -178,7 +178,7 @@ const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
               }>
                 {line.type === "command" && (
                   <>
-                    <span className="text-accent">netquest@lab</span>
+                    <span className="text-accent">netops@lab</span>
                     <span className="text-muted-foreground">:</span>
                     <span className="text-primary">~</span>
                     <span className="text-muted-foreground">$ </span>
