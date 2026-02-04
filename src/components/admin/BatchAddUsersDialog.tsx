@@ -137,7 +137,7 @@ pedro@exemplo.com,senha789`}
                   <div
                     key={index}
                     className={`flex items-center gap-2 p-2 rounded-lg ${
-                      result.success ? "bg-green-500/10" : "bg-destructive/10"
+                      result.success ? "bg-primary/10" : "bg-destructive/10"
                     }`}
                   >
                     {result.success ? (
