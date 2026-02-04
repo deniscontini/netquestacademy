@@ -21,8 +21,11 @@ const ModulePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useModuleWithContent(moduleId || "");
   const { data: labProgress } = useUserLabProgress();
+  const { data: lessonProgress } = useUserLessonProgress();
   const startModule = useStartModule();
+  const completeLesson = useCompleteLesson();
   const [selectedLab, setSelectedLab] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
