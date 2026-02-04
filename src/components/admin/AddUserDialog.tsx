@@ -57,7 +57,13 @@ const AddUserDialog = ({ open, onOpenChange }: AddUserDialogProps) => {
 
   const onSubmit = async (data: CreateUserFormData) => {
     try {
-      await createUser.mutateAsync(data);
+      await createUser.mutateAsync({
+        email: data.email,
+        password: data.password,
+        fullName: data.fullName,
+        username: data.username,
+        role: data.role,
+      });
       toast({
         title: "Sucesso",
         description: "Usuário criado com sucesso",

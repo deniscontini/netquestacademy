@@ -141,7 +141,7 @@ pedro@exemplo.com,senha789`}
                     }`}
                   >
                     {result.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <CheckCircle2 className="w-4 h-4 text-primary" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-destructive" />
                     )}
