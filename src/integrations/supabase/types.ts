@@ -553,6 +553,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           difficulty: Database["public"]["Enums"]["difficulty_level"] | null
+          expected_commands: Json | null
           hints: Json | null
           id: string | null
           instructions: string | null
@@ -567,6 +568,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          expected_commands?: Json | null
           hints?: Json | null
           id?: string | null
           instructions?: string | null
@@ -581,6 +583,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          expected_commands?: Json | null
           hints?: Json | null
           id?: string | null
           instructions?: string | null
