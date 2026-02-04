@@ -15,15 +15,19 @@ export const useUserRole = () => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
-        .single();
+        .eq("user_id", user.id);
 
       if (error) {
         console.error("Error fetching user role:", error);
         return "user"; // Default to user role
       }
 
-      return data?.role || "user";
+      // If user has multiple roles, prioritize admin
+      const roles = data?.map((r) => r.role) || [];
+      if (roles.includes("admin")) {
+        return "admin";
+      }
+      return roles[0] || "user";
     },
     enabled: !!user,
   });
