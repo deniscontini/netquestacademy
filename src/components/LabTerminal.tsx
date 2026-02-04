@@ -33,7 +33,7 @@ interface TerminalLine {
 const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
   const [command, setCommand] = useState("");
   const [history, setHistory] = useState<TerminalLine[]>([
-    { type: "system", content: "Terminal NetQuest iniciado..." },
+    { type: "system", content: "Terminal NetOps Academy iniciado..." },
     { type: "system", content: `Lab: ${lab.title}` },
     { type: "output", content: "" },
   ]);
