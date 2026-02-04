@@ -65,7 +65,19 @@ const ModulePage = () => {
 
   const { module, lessons, labs } = data;
   const activeLab = labs.find(lab => lab.id === selectedLab);
+  const activeLesson = lessons.find(lesson => lesson.id === selectedLesson);
+  const activeLessonIndex = lessons.findIndex(lesson => lesson.id === selectedLesson);
   const labProgressMap = new Map(labProgress?.map(p => [p.lab_id, p]));
+  const lessonProgressMap = new Map(lessonProgress?.map(p => [p.lesson_id, p]));
+
+  const handleCompleteLesson = async (lessonId: string) => {
+    try {
+      await completeLesson.mutateAsync(lessonId);
+      toast.success("Lição concluída! XP adicionado.");
+    } catch (error) {
+      toast.error("Erro ao marcar lição como concluída.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
