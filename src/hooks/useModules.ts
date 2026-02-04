@@ -78,13 +78,20 @@ export const useModuleWithContent = (moduleId: string) => {
 
       if (moduleRes.error) throw moduleRes.error;
 
+      // Cast to any to handle view types that may not have expected_commands in TS types yet
+      const labsData = (labsRes.data || []) as Array<Record<string, unknown>>;
+
       return {
         module: moduleRes.data as Module,
         lessons: (lessonsRes.data || []) as Lesson[],
-        labs: (labsRes.data || []).map(lab => ({
+        labs: labsData.map(lab => ({
           ...lab,
-          expected_commands: Array.isArray(lab.expected_commands) ? lab.expected_commands : JSON.parse(lab.expected_commands as string || '[]'),
-          hints: Array.isArray(lab.hints) ? lab.hints : JSON.parse(lab.hints as string || '[]'),
+          expected_commands: Array.isArray(lab.expected_commands) 
+            ? lab.expected_commands as string[]
+            : JSON.parse((lab.expected_commands as string) || '[]'),
+          hints: Array.isArray(lab.hints) 
+            ? lab.hints as string[]
+            : JSON.parse((lab.hints as string) || '[]'),
         })) as Lab[],
       };
     },
