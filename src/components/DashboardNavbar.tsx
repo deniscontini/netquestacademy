@@ -39,7 +39,7 @@ const DashboardNavbar = () => {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Network className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">NetQuest</span>
+            <span className="text-xl font-bold">NetOps Academy</span>
           </a>
 
           {/* Navigation */}
