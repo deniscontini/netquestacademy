@@ -73,7 +73,7 @@ export const useModuleWithContent = (moduleId: string) => {
       const [moduleRes, lessonsRes, labsRes] = await Promise.all([
         supabase.from("modules").select("*").eq("id", moduleId).single(),
         supabase.from("lessons").select("*").eq("module_id", moduleId).order("order_index"),
-        supabase.from("labs").select("*").eq("module_id", moduleId).order("order_index"),
+        supabase.from("labs_public").select("*").eq("module_id", moduleId).eq("is_active", true).order("order_index"),
       ]);
 
       if (moduleRes.error) throw moduleRes.error;
