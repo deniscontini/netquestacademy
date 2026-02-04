@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Network, LogOut, User, ChevronDown } from "lucide-react";
+import { Network, LogOut, User, ChevronDown, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import { Badge } from "@/components/ui/badge";
 
 const DashboardNavbar = () => {
