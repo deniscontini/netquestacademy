@@ -105,7 +105,7 @@ const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
             <div className="w-3 h-3 rounded-full bg-[hsl(45_90%_55%/0.6)]" />
             <div className="w-3 h-3 rounded-full bg-accent/60" />
           </div>
-          <span className="text-sm text-muted-foreground ml-2 font-mono">netquest-lab</span>
+          <span className="text-sm text-muted-foreground ml-2 font-mono">netops-lab</span>
         </div>
         <div className="flex items-center gap-2">
           {progress?.is_completed ? (
