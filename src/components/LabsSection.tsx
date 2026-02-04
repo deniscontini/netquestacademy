@@ -99,7 +99,7 @@ const LabsSection = () => {
               <div className="lg:col-span-2 bg-[hsl(222_47%_4%)] p-6">
                 <div className="font-mono text-sm space-y-2">
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest@lab</span>
+                    <span className="text-accent">netops@lab</span>
                     <span className="text-muted-foreground">:</span>
                     <span className="text-primary">~</span>
                     <span className="text-muted-foreground">$ </span>
