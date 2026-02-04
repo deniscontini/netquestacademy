@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModuleWithContent, useStartModule } from "@/hooks/useModules";
-import { useUserLabProgress, useSubmitLabCommand } from "@/hooks/useLabs";
+import { useUserLabProgress } from "@/hooks/useLabs";
+import { useUserLessonProgress, useCompleteLesson } from "@/hooks/useLessonProgress";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import LabTerminal from "@/components/LabTerminal";
+import LessonContent from "@/components/LessonContent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BookOpen, FlaskConical, CheckCircle, Clock, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 const ModulePage = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
