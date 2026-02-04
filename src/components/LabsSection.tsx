@@ -115,7 +115,7 @@ const LabsSection = () => {
                     Entrando no modo de configuração global...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest</span>
+                    <span className="text-accent">netops</span>
                     <span className="text-muted-foreground">(config)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
