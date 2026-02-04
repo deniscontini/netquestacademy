@@ -125,7 +125,7 @@ const LabsSection = () => {
                     Configurando interface ethernet 0...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest</span>
+                    <span className="text-accent">netops</span>
                     <span className="text-muted-foreground">(config-if)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
