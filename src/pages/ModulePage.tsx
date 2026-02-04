@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useModuleWithContent, useStartModule } from "@/hooks/useModules";
-import { useUserLabProgress, useSubmitLabCommand } from "@/hooks/useLabs";
+import { useUserLabProgress } from "@/hooks/useLabs";
+import { useUserLessonProgress, useCompleteLesson } from "@/hooks/useLessonProgress";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import LabTerminal from "@/components/LabTerminal";
+import LessonContent from "@/components/LessonContent";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BookOpen, FlaskConical, CheckCircle, Clock, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 const ModulePage = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
@@ -18,8 +21,11 @@ const ModulePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useModuleWithContent(moduleId || "");
   const { data: labProgress } = useUserLabProgress();
+  const { data: lessonProgress } = useUserLessonProgress();
   const startModule = useStartModule();
+  const completeLesson = useCompleteLesson();
   const [selectedLab, setSelectedLab] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -59,7 +65,19 @@ const ModulePage = () => {
 
   const { module, lessons, labs } = data;
   const activeLab = labs.find(lab => lab.id === selectedLab);
+  const activeLesson = lessons.find(lesson => lesson.id === selectedLesson);
+  const activeLessonIndex = lessons.findIndex(lesson => lesson.id === selectedLesson);
   const labProgressMap = new Map(labProgress?.map(p => [p.lab_id, p]));
+  const lessonProgressMap = new Map(lessonProgress?.map(p => [p.lesson_id, p]));
+
+  const handleCompleteLesson = async (lessonId: string) => {
+    try {
+      await completeLesson.mutateAsync(lessonId);
+      toast.success("Lição concluída! XP adicionado.");
+    } catch (error) {
+      toast.error("Erro ao marcar lição como concluída.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -104,38 +122,68 @@ const ModulePage = () => {
 
           {/* Lessons Tab */}
           <TabsContent value="lessons" className="space-y-4">
-            {lessons.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Nenhuma lição disponível ainda.
-                </CardContent>
-              </Card>
+            {selectedLesson && activeLesson ? (
+              <LessonContent
+                lesson={activeLesson}
+                lessonIndex={activeLessonIndex}
+                isCompleted={lessonProgressMap.get(activeLesson.id)?.is_completed}
+                onBack={() => setSelectedLesson(null)}
+                onComplete={() => handleCompleteLesson(activeLesson.id)}
+              />
             ) : (
-              lessons.map((lesson, index) => (
-                <Card key={lesson.id} variant="interactive" className="cursor-pointer">
-                  <CardContent className="py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{lesson.title}</h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {lesson.duration_minutes || 10} min
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Zap className="w-3 h-3" />
-                            +{lesson.xp_reward} XP
-                          </span>
-                        </div>
-                      </div>
-                      <Badge variant="outline">Em breve</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              <>
+                {lessons.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Nenhuma lição disponível ainda.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  lessons.map((lesson, index) => {
+                    const progress = lessonProgressMap.get(lesson.id);
+                    const isCompleted = progress?.is_completed || false;
+                    
+                    return (
+                      <Card 
+                        key={lesson.id} 
+                        variant="interactive" 
+                        className="cursor-pointer"
+                        onClick={() => setSelectedLesson(lesson.id)}
+                      >
+                        <CardContent className="py-4">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                              isCompleted 
+                                ? 'bg-accent/20 text-accent' 
+                                : 'bg-primary/10 text-primary'
+                            }`}>
+                              {isCompleted ? <CheckCircle className="w-5 h-5" /> : index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold">{lesson.title}</h3>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {lesson.duration_minutes || 10} min
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Zap className="w-3 h-3" />
+                                  +{lesson.xp_reward} XP
+                                </span>
+                              </div>
+                            </div>
+                            {isCompleted ? (
+                              <Badge variant="default" className="bg-accent text-accent-foreground">Concluída</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-primary border-primary">Iniciar</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </>
             )}
           </TabsContent>
 
