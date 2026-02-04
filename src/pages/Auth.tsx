@@ -96,6 +96,25 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      
+      if (error) {
+        toast.error("Erro ao entrar com Google", { 
+          description: error.message 
+        });
+      }
+    } catch (err) {
+      toast.error("Erro ao conectar com Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 network-grid">
       <div className="w-full max-w-md space-y-8">
