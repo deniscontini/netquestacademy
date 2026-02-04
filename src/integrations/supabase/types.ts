@@ -319,6 +319,13 @@ export type Database = {
             referencedRelation: "labs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_lab_progress_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "labs_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_lesson_progress: {
@@ -456,9 +463,92 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      labs_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"] | null
+          hints: Json | null
+          id: string | null
+          instructions: string | null
+          is_active: boolean | null
+          module_id: string | null
+          order_index: number | null
+          title: string | null
+          updated_at: string | null
+          xp_reward: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          hints?: Json | null
+          id?: string | null
+          instructions?: string | null
+          is_active?: boolean | null
+          module_id?: string | null
+          order_index?: number | null
+          title?: string | null
+          updated_at?: string | null
+          xp_reward?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"] | null
+          hints?: Json | null
+          id?: string | null
+          instructions?: string | null
+          is_active?: boolean | null
+          module_id?: string | null
+          order_index?: number | null
+          title?: string | null
+          updated_at?: string | null
+          xp_reward?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labs_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          id: string | null
+          level: number | null
+          user_id: string | null
+          username: string | null
+          xp: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id?: string | null
+          level?: number | null
+          user_id?: string | null
+          username?: string | null
+          xp?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string | null
+          level?: number | null
+          user_id?: string | null
+          username?: string | null
+          xp?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      award_achievement: {
+        Args: { p_achievement_id: string; p_user_id: string }
+        Returns: boolean
+      }
       calculate_level: { Args: { xp_amount: number }; Returns: number }
       has_role: {
         Args: {
