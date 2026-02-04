@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useAdminUsers, useUpdateUserRole, useResetUserProgress } from "@/hooks/useAdminData";
+import { useAdminUsers, useUpdateUserRole, useResetUserProgress, UserWithRole } from "@/hooks/useAdminData";
+import { useDeleteUser, useBatchDeleteUsers } from "@/hooks/useUserManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -31,20 +33,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, MoreVertical, Shield, User, RotateCcw, Zap } from "lucide-react";
+import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import AddUserDialog from "./AddUserDialog";
+import BatchAddUsersDialog from "./BatchAddUsersDialog";
 
 const AdminUsers = () => {
   const { data: users, isLoading } = useAdminUsers();
   const updateRole = useUpdateUserRole();
   const resetProgress = useResetUserProgress();
+  const deleteUser = useDeleteUser();
+  const batchDeleteUsers = useBatchDeleteUsers();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+  const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false);
 
   const filteredUsers = users?.filter(
     (user) =>
@@ -89,6 +100,71 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await deleteUser.mutateAsync(selectedUser);
+      toast({
+        title: "Sucesso",
+        description: "Usuário removido com sucesso",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível remover o usuário",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedUsers.size === 0) return;
+
+    try {
+      const result = await batchDeleteUsers.mutateAsync(Array.from(selectedUsers));
+      const successCount = result.results.filter((r) => r.success).length;
+      const failCount = result.results.filter((r) => !r.success).length;
+
+      toast({
+        title: "Operação concluída",
+        description: `${successCount} usuário(s) removido(s), ${failCount} falha(s)`,
+        variant: failCount > 0 ? "destructive" : "default",
+      });
+
+      setSelectedUsers(new Set());
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível remover os usuários",
+        variant: "destructive",
+      });
+    } finally {
+      setBatchDeleteDialogOpen(false);
+    }
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    const newSelection = new Set(selectedUsers);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUsers(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUsers.size === filteredUsers?.length) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(filteredUsers?.map((u) => u.user_id) || []));
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -106,19 +182,45 @@ const AdminUsers = () => {
     <>
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Gerenciar Usuários ({users?.length || 0})
-            </CardTitle>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar usuário..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                Gerenciar Usuários ({users?.length || 0})
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setBatchAddDialogOpen(true)}>
+                  <Users className="w-4 h-4 mr-2" />
+                  Adicionar em Lote
+                </Button>
+                <Button size="sm" onClick={() => setAddUserDialogOpen(true)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Adicionar Usuário
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar usuário..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              
+              {selectedUsers.size > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBatchDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Remover Selecionados ({selectedUsers.size})
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -127,6 +229,12 @@ const AdminUsers = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedUsers.size === filteredUsers?.length && filteredUsers.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Nível</TableHead>
@@ -138,6 +246,12 @@ const AdminUsers = () => {
               <TableBody>
                 {filteredUsers?.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedUsers.has(user.user_id)}
+                        onCheckedChange={() => toggleUserSelection(user.user_id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8">
@@ -211,7 +325,6 @@ const AdminUsers = () => {
                           )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            className="text-destructive"
                             onClick={() => {
                               setSelectedUser(user.user_id);
                               setResetDialogOpen(true);
@@ -219,6 +332,17 @@ const AdminUsers = () => {
                           >
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Resetar Progresso
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setSelectedUser(user.user_id);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remover Usuário
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -237,6 +361,13 @@ const AdminUsers = () => {
         </CardContent>
       </Card>
 
+      {/* Add User Dialog */}
+      <AddUserDialog open={addUserDialogOpen} onOpenChange={setAddUserDialogOpen} />
+
+      {/* Batch Add Users Dialog */}
+      <BatchAddUsersDialog open={batchAddDialogOpen} onOpenChange={setBatchAddDialogOpen} />
+
+      {/* Reset Progress Dialog */}
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -254,6 +385,52 @@ const AdminUsers = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Resetar Progresso
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover permanentemente o usuário da plataforma,
+              incluindo todos os seus dados e progresso. Esta ação não pode
+              ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover Usuário
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Batch Delete Dialog */}
+      <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover {selectedUsers.size} Usuário(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover permanentemente {selectedUsers.size} usuário(s) da plataforma,
+              incluindo todos os seus dados e progresso. Esta ação não pode
+              ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBatchDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover Usuários
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
