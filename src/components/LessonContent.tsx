@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Lesson } from "@/hooks/useModules";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Zap, CheckCircle, BookOpen } from "lucide-react";
+import VideoPlayer from "@/components/VideoPlayer";
+import LessonQuiz, { QuizQuestion } from "@/components/LessonQuiz";
+import { useQuizQuestions, useUserQuizProgress, useCompleteQuiz } from "@/hooks/useQuiz";
+import { toast } from "sonner";
 
 interface LessonContentProps {
   lesson: Lesson;
@@ -13,8 +17,88 @@ interface LessonContentProps {
   onComplete?: () => void;
 }
 
+interface ParsedVideo {
+  title: string;
+  url: string;
+  duration?: string;
+  channel?: string;
+}
+
+// Parse videos from markdown content
+const parseVideosFromContent = (content: string): { videos: ParsedVideo[]; cleanContent: string } => {
+  const videos: ParsedVideo[] = [];
+  let cleanContent = content;
+  
+  // Match video lines: 📺 **[Title](URL)** (duration) and similar patterns
+  const videoPatterns = [
+    /📺\s*\*?\*?\[([^\]]+)\]\(([^)]+)\)\*?\*?\s*(?:\(([^)]+)\))?\s*(?:\n([^\n📺🔧🎮📊🌐]*?))?/g,
+    /\*?\*?\[([^\]]+)\]\((https?:\/\/(?:www\.)?youtube\.com[^)]+)\)\*?\*?\s*(?:\(([^)]+)\))?/g,
+    /\*?\*?\[([^\]]+)\]\((https?:\/\/(?:www\.)?youtu\.be[^)]+)\)\*?\*?\s*(?:\(([^)]+)\))?/g,
+  ];
+
+  for (const pattern of videoPatterns) {
+    let match;
+    while ((match = pattern.exec(content)) !== null) {
+      const title = match[1].trim();
+      const url = match[2].trim();
+      const duration = match[3]?.trim();
+      
+      // Extract channel from title or description
+      let channel = "";
+      if (title.includes(" - ")) {
+        const parts = title.split(" - ");
+        channel = parts[0].trim();
+      } else if (url.includes("youtube.com") || url.includes("youtu.be")) {
+        // Try to extract channel from common patterns
+        if (title.toLowerCase().includes("curso em vídeo")) channel = "Curso em Vídeo";
+        else if (title.toLowerCase().includes("boson")) channel = "Boson Treinamentos";
+        else if (title.toLowerCase().includes("univesp")) channel = "Univesp";
+        else if (title.toLowerCase().includes("cisco")) channel = "Cisco";
+        else if (title.toLowerCase().includes("crash course")) channel = "Crash Course";
+        else if (title.toLowerCase().includes("computerphile")) channel = "Computerphile";
+        else if (title.toLowerCase().includes("hardware redes")) channel = "Hardware Redes Brasil";
+        else if (title.toLowerCase().includes("ti com windows")) channel = "TI com Windows";
+        else if (title.toLowerCase().includes("código fonte")) channel = "Código Fonte TV";
+      }
+      
+      // Avoid duplicates
+      if (!videos.some(v => v.url === url)) {
+        videos.push({ title, url, duration, channel });
+      }
+    }
+  }
+
+  // Remove video sections from content
+  cleanContent = cleanContent
+    // Remove PT-BR video section
+    .replace(/### 🇧🇷 Vídeos em Português \(Brasil\)[\s\S]*?(?=###|## 📚|$)/g, '')
+    // Remove general video section headers
+    .replace(/### Vídeos Recomendados[\s\S]*?(?=###|## |$)/g, '')
+    // Remove individual video lines
+    .replace(/📺[^\n]*\n?/g, '')
+    // Remove empty sections
+    .replace(/##\s*🎬\s*Recursos Multimídia\s*\n+(?=##|$)/g, '')
+    // Clean up excessive newlines
+    .replace(/\n{3,}/g, '\n\n');
+
+  return { videos, cleanContent };
+};
+
 const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }: LessonContentProps) => {
   const [showCompleteButton, setShowCompleteButton] = useState(false);
+  const { data: quizQuestions = [] } = useQuizQuestions(lesson.id);
+  const { data: quizProgress = [] } = useUserQuizProgress();
+  const completeQuiz = useCompleteQuiz();
+  
+  const lessonQuizProgress = quizProgress.find(p => p.lesson_id === lesson.id);
+  const hasQuiz = quizQuestions.length > 0;
+  const quizCompleted = !!lessonQuizProgress;
+
+  // Parse content for videos
+  const { videos, cleanContent } = useMemo(() => {
+    if (!lesson.content) return { videos: [], cleanContent: "" };
+    return parseVideosFromContent(lesson.content);
+  }, [lesson.content]);
 
   // Show complete button after scrolling or after 30 seconds
   useState(() => {
@@ -22,9 +106,29 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
     return () => clearTimeout(timer);
   });
 
+  const handleQuizComplete = async (score: number, totalQuestions: number, xpEarned: number) => {
+    try {
+      await completeQuiz.mutateAsync({
+        lessonId: lesson.id,
+        score,
+        totalQuestions,
+        xpEarned,
+      });
+      toast.success(`Quiz concluído! +${xpEarned} XP ganhos.`);
+    } catch (error) {
+      toast.error("Erro ao salvar progresso do quiz.");
+    }
+  };
+
   // Simple markdown-like rendering for the content
   const renderContent = (content: string) => {
     return content.split('\n').map((line, index) => {
+      // Skip video section markers
+      if (line.includes('🎬') && line.includes('Recursos Multimídia')) return null;
+      if (line.includes('Vídeos Recomendados') && line.startsWith('###')) return null;
+      if (line.includes('🇧🇷 Vídeos em Português')) return null;
+      if (line.startsWith('📺')) return null;
+      
       // Headers
       if (line.startsWith('### ')) {
         return <h3 key={index} className="text-lg font-semibold mt-6 mb-3 text-foreground">{line.replace('### ', '')}</h3>;
@@ -148,6 +252,11 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
                     <Zap className="w-3 h-3" />
                     +{lesson.xp_reward} XP
                   </span>
+                  {hasQuiz && (
+                    <Badge variant="outline" className="text-xs">
+                      + Quiz ({quizQuestions.reduce((acc, q) => acc + q.xp_reward, 0)} XP)
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
@@ -162,7 +271,14 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
         <CardContent className="pt-6">
           <div className="prose prose-invert max-w-none">
             {lesson.content ? (
-              renderContent(lesson.content)
+              <>
+                {renderContent(cleanContent)}
+                
+                {/* Video Player Section */}
+                {videos.length > 0 && (
+                  <VideoPlayer videos={videos} title="🎬 Vídeos Recomendados" />
+                )}
+              </>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -171,12 +287,38 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
             )}
           </div>
 
+          {/* Quiz Section */}
+          {hasQuiz && (
+            <LessonQuiz
+              questions={quizQuestions.map(q => ({
+                id: q.id,
+                question: q.question,
+                options: q.options,
+                explanation: q.explanation || undefined,
+                xp_reward: q.xp_reward,
+              }))}
+              onComplete={handleQuizComplete}
+              isCompleted={quizCompleted}
+              previousScore={lessonQuizProgress?.score}
+            />
+          )}
+
           {/* Complete button */}
-          {!isCompleted && lesson.content && (
+          {!isCompleted && lesson.content && !hasQuiz && (
             <div className="mt-8 pt-6 border-t border-border flex justify-end">
               <Button onClick={onComplete} className="gap-2">
                 <CheckCircle className="w-4 h-4" />
                 Marcar como concluída
+              </Button>
+            </div>
+          )}
+          
+          {/* Complete button after quiz */}
+          {!isCompleted && hasQuiz && quizCompleted && (
+            <div className="mt-8 pt-6 border-t border-border flex justify-end">
+              <Button onClick={onComplete} className="gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Marcar lição como concluída
               </Button>
             </div>
           )}

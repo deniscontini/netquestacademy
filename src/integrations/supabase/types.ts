@@ -245,6 +245,50 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions: {
+        Row: {
+          created_at: string
+          explanation: string | null
+          id: string
+          lesson_id: string
+          options: Json
+          order_index: number
+          question: string
+          updated_at: string
+          xp_reward: number
+        }
+        Insert: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          lesson_id: string
+          options?: Json
+          order_index?: number
+          question: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Update: {
+          created_at?: string
+          explanation?: string | null
+          id?: string
+          lesson_id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -406,6 +450,47 @@ export type Database = {
             columns: ["module_id"]
             isOneToOne: false
             referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_quiz_progress: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          lesson_id: string
+          score: number
+          total_questions: number
+          user_id: string
+          xp_earned: number
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          score?: number
+          total_questions?: number
+          user_id: string
+          xp_earned?: number
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+          xp_earned?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_quiz_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
         ]
