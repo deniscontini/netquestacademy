@@ -89,7 +89,7 @@ export const useSubmitLabCommand = () => {
       }
 
       const currentCommands = Array.isArray(progress?.commands_used) ? progress.commands_used : [];
-      const newCommands = [...currentCommands, command];
+      const newCommands = [...currentCommands, sanitizedCommand];
 
       if (progress) {
         // Update existing record

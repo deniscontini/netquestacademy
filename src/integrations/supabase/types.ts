@@ -550,6 +550,10 @@ export type Database = {
         Returns: boolean
       }
       calculate_level: { Args: { xp_amount: number }; Returns: number }
+      can_access_module: {
+        Args: { p_module_id: string; p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
