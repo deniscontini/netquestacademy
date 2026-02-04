@@ -55,7 +55,7 @@ const LabsSection = () => {
                   <div className="w-3 h-3 rounded-full bg-[hsl(45_90%_55%/0.6)]" />
                   <div className="w-3 h-3 rounded-full bg-accent/60" />
                 </div>
-                <span className="text-sm text-muted-foreground ml-2 font-mono">netquest-lab</span>
+                <span className="text-sm text-muted-foreground ml-2 font-mono">netops-lab</span>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="level">Lab Ativo</Badge>
@@ -99,14 +99,14 @@ const LabsSection = () => {
               <div className="lg:col-span-2 bg-[hsl(222_47%_4%)] p-6">
                 <div className="font-mono text-sm space-y-2">
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest@lab</span>
+                    <span className="text-accent">netops@lab</span>
                     <span className="text-muted-foreground">:</span>
                     <span className="text-primary">~</span>
                     <span className="text-muted-foreground">$ </span>
                     <span className="text-foreground">enable</span>
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest@lab</span>
+                    <span className="text-accent">netops@lab</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
                     <span className="text-foreground">configure terminal</span>
@@ -115,7 +115,7 @@ const LabsSection = () => {
                     Entrando no modo de configuração global...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest</span>
+                    <span className="text-accent">netops</span>
                     <span className="text-muted-foreground">(config)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
@@ -125,7 +125,7 @@ const LabsSection = () => {
                     Configurando interface ethernet 0...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netquest</span>
+                    <span className="text-accent">netops</span>
                     <span className="text-muted-foreground">(config-if)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>

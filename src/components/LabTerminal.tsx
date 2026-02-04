@@ -33,7 +33,7 @@ interface TerminalLine {
 const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
   const [command, setCommand] = useState("");
   const [history, setHistory] = useState<TerminalLine[]>([
-    { type: "system", content: "Terminal NetQuest iniciado..." },
+    { type: "system", content: "Terminal NetOps Academy iniciado..." },
     { type: "system", content: `Lab: ${lab.title}` },
     { type: "output", content: "" },
   ]);
@@ -105,7 +105,7 @@ const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
             <div className="w-3 h-3 rounded-full bg-[hsl(45_90%_55%/0.6)]" />
             <div className="w-3 h-3 rounded-full bg-accent/60" />
           </div>
-          <span className="text-sm text-muted-foreground ml-2 font-mono">netquest-lab</span>
+          <span className="text-sm text-muted-foreground ml-2 font-mono">netops-lab</span>
         </div>
         <div className="flex items-center gap-2">
           {progress?.is_completed ? (
@@ -178,7 +178,7 @@ const LabTerminal = ({ lab, progress }: LabTerminalProps) => {
               }>
                 {line.type === "command" && (
                   <>
-                    <span className="text-accent">netquest@lab</span>
+                    <span className="text-accent">netops@lab</span>
                     <span className="text-muted-foreground">:</span>
                     <span className="text-primary">~</span>
                     <span className="text-muted-foreground">$ </span>
