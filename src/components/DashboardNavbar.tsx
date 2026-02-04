@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Network, LogOut, User, ChevronDown } from "lucide-react";
+import { Network, LogOut, User, ChevronDown, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,12 +11,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import { Badge } from "@/components/ui/badge";
 
 const DashboardNavbar = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
     await signOut();
@@ -90,6 +92,15 @@ const DashboardNavbar = () => {
                   <User className="w-4 h-4 mr-2" />
                   Meu Perfil
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/admin")}>
+                      <Shield className="w-4 h-4 mr-2" />
+                      Painel Admin
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
