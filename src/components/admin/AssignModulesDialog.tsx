@@ -35,7 +35,7 @@ const AssignModulesDialog = ({
   const [expiresAt, setExpiresAt] = useState<string>("");
   
   const { toast } = useToast();
-  const { modules, isLoading: modulesLoading } = useModules();
+  const { data: modules, isLoading: modulesLoading } = useModules();
   const { data: assignments, isLoading: assignmentsLoading } = useUserModuleAssignments(userId);
   const assignModules = useAssignModules();
   const removeAssignment = useRemoveModuleAssignment();
@@ -109,7 +109,7 @@ const AssignModulesDialog = ({
     (m) => !assignedModuleIds.includes(m.id)
   ) || [];
 
-  const assignedModules = modules?.filter(
+  const assignedModulesData = modules?.filter(
     (m) => assignedModuleIds.includes(m.id)
   ) || [];
 
@@ -135,11 +135,11 @@ const AssignModulesDialog = ({
         ) : (
           <div className="space-y-6">
             {/* Currently assigned modules */}
-            {assignedModules.length > 0 && (
+            {assignedModulesData.length > 0 && (
               <div className="space-y-2">
                 <Label>Módulos Atribuídos</Label>
                 <div className="flex flex-wrap gap-2">
-                  {assignedModules.map((module) => (
+                  {assignedModulesData.map((module) => (
                     <Badge
                       key={module.id}
                       variant="secondary"

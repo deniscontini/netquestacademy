@@ -34,13 +34,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
- import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown } from "lucide-react";
+import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddUserDialog from "./AddUserDialog";
 import BatchAddUsersDialog from "./BatchAddUsersDialog";
- import ChangePlanDialog from "./ChangePlanDialog";
+import ChangePlanDialog from "./ChangePlanDialog";
+import AssignModulesDialog from "./AssignModulesDialog";
  
  interface UserWithSubscription {
    user_id: string;
