@@ -366,7 +366,12 @@ pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"Nome do Curso"`}
                     ) : (
                       <AlertCircle className="w-4 h-4 text-destructive" />
                     )}
-                    <span className="font-mono text-sm">{result.email}</span>
+                    <span className="font-mono text-sm flex-1">{result.email}</span>
+                    {result.success && result.coursesAssigned !== undefined && result.coursesAssigned > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {result.coursesAssigned} curso(s)
+                      </span>
+                    )}
                     {result.error && (
                       <span className="text-xs text-muted-foreground">- {result.error}</span>
                     )}

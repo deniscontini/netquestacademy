@@ -159,12 +159,12 @@ const AssignModulesDialog = ({
               </div>
             )}
 
-            {/* Available modules to assign */}
+            {/* Available courses to assign */}
             <div className="space-y-2">
-              <Label>Módulos Disponíveis</Label>
+              <Label>Cursos Disponíveis</Label>
               {availableModules.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Todos os módulos já foram atribuídos
+                  Todos os cursos já foram atribuídos
                 </p>
               ) : (
                 <ScrollArea className="h-[200px] rounded-md border p-4">
