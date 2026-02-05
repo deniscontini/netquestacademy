@@ -294,7 +294,6 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
                 id: q.id,
                 question: q.question,
                 options: q.options,
-                explanation: q.explanation || undefined,
                 xp_reward: q.xp_reward,
               }))}
               onComplete={handleQuizComplete}

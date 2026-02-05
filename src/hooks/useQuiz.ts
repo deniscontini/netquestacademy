@@ -2,14 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface QuizQuestion {
+// Interface for questions fetched from the secure public view (no is_correct field)
+export interface QuizQuestionPublic {
   id: string;
   lesson_id: string;
   question: string;
-  options: { text: string; is_correct: boolean }[];
-  explanation: string | null;
+  options: { text: string; id: string }[];
   order_index: number;
   xp_reward: number;
+}
+
+// Interface for answer verification response
+export interface VerifyAnswerResult {
+  is_correct: boolean;
+  correct_answer: string;
+  explanation: string | null;
+  error?: string;
 }
 
 export interface UserQuizProgress {
@@ -22,12 +30,13 @@ export interface UserQuizProgress {
   completed_at: string;
 }
 
+// Fetch quiz questions from the secure public view (no answers exposed)
 export const useQuizQuestions = (lessonId: string) => {
   return useQuery({
     queryKey: ["quiz-questions", lessonId],
-    queryFn: async (): Promise<QuizQuestion[]> => {
+    queryFn: async (): Promise<QuizQuestionPublic[]> => {
       const { data, error } = await supabase
-        .from("quiz_questions")
+        .from("quiz_questions_public")
         .select("*")
         .eq("lesson_id", lessonId)
         .order("order_index", { ascending: true });
@@ -37,9 +46,30 @@ export const useQuizQuestions = (lessonId: string) => {
       return (data || []).map(q => ({
         ...q,
         options: Array.isArray(q.options) ? q.options : JSON.parse(q.options as string || '[]'),
-      })) as QuizQuestion[];
+      })) as QuizQuestionPublic[];
     },
     enabled: !!lessonId,
+  });
+};
+
+// Verify answer using secure server-side RPC
+export const useVerifyAnswer = () => {
+  return useMutation({
+    mutationFn: async ({
+      questionId,
+      selectedOptionId,
+    }: {
+      questionId: string;
+      selectedOptionId: string;
+    }): Promise<VerifyAnswerResult> => {
+      const { data, error } = await supabase.rpc("verify_quiz_answer", {
+        p_question_id: questionId,
+        p_selected_option_id: selectedOptionId,
+      });
+
+      if (error) throw error;
+      return data as unknown as VerifyAnswerResult;
+    },
   });
 };
 
