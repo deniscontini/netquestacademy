@@ -22,6 +22,11 @@ interface BatchAddUsersDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const CSV_TEMPLATE = `email,senha,nome,username,role
+joao@exemplo.com,senha123,João Silva,joaosilva,user
+maria@exemplo.com,senha456,Maria Santos,mariasantos,admin
+pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user`;
+
 const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) => {
   const [csvData, setCsvData] = useState("");
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string }[] | null>(null);
@@ -32,7 +37,11 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
     const lines = data.trim().split("\n");
     const users: { email: string; password: string; fullName?: string; username?: string; role?: "admin" | "user" }[] = [];
 
-    for (const line of lines) {
+    // Skip header line if present
+    const startIndex = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i];
       const [email, password, fullName, username, role] = line.split(",").map((s) => s.trim());
       if (email && password) {
         users.push({
@@ -46,6 +55,52 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
     }
 
     return users;
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "modelo_usuarios.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download iniciado",
+      description: "O modelo CSV foi baixado",
+    });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".csv")) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, envie um arquivo CSV",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setCsvData(text);
+      toast({
+        title: "Arquivo carregado",
+        description: `${file.name} foi carregado com sucesso`,
+      });
+    };
+    reader.readAsText(file);
+
+    // Reset input
+    event.target.value = "";
   };
 
   const handleSubmit = async () => {
