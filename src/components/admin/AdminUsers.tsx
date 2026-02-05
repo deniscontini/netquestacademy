@@ -498,6 +498,19 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign Modules Dialog */}
+      {selectedUserForModules && (
+        <AssignModulesDialog
+          open={assignModulesDialogOpen}
+          onOpenChange={(open) => {
+            setAssignModulesDialogOpen(open);
+            if (!open) setSelectedUserForModules(null);
+          }}
+          userId={selectedUserForModules.user_id}
+          userName={selectedUserForModules.full_name || selectedUserForModules.username || "Usuário"}
+        />
+      )}
     </>
   );
 };
