@@ -27,27 +27,74 @@ interface BatchAddUsersDialogProps {
 
 const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) => {
   const [csvData, setCsvData] = useState("");
-  const [results, setResults] = useState<{ email: string; success: boolean; error?: string }[] | null>(null);
+  const [results, setResults] = useState<{ email: string; success: boolean; error?: string; coursesAssigned?: number }[] | null>(null);
   const batchCreate = useBatchCreateUsers();
+  const assignModules = useAssignModules();
+  const { data: modules } = useModules();
   const { toast } = useToast();
 
+  // Generate CSV template dynamically with available courses
+  const generateCsvTemplate = () => {
+    const courseNames = modules?.map((m) => m.title).join("; ") || "";
+    const header = `email,senha,nome,username,role,cursos`;
+    const example1 = `joao@exemplo.com,senha123,João Silva,joaosilva,user,"Curso 1; Curso 2"`;
+    const example2 = `maria@exemplo.com,senha456,Maria Santos,mariasantos,admin,`;
+    const example3 = `pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"${modules?.[0]?.title || "Nome do Curso"}"`;
+    
+    return `${header}\n${example1}\n${example2}\n${example3}\n\n# Cursos disponíveis: ${courseNames || "Nenhum curso cadastrado"}`;
+  };
+
   const parseCSV = (data: string) => {
-    const lines = data.trim().split("\n");
-    const users: { email: string; password: string; fullName?: string; username?: string; role?: "admin" | "user" }[] = [];
+    const lines = data.trim().split("\n").filter((line) => !line.startsWith("#"));
+    const users: { 
+      email: string; 
+      password: string; 
+      fullName?: string; 
+      username?: string; 
+      role?: "admin" | "user";
+      courses?: string[];
+    }[] = [];
 
     // Skip header line if present
     const startIndex = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
 
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i];
-      const [email, password, fullName, username, role] = line.split(",").map((s) => s.trim());
+      if (!line.trim()) continue;
+      
+      // Handle quoted fields (for courses with semicolons)
+      const fields: string[] = [];
+      let currentField = "";
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          fields.push(currentField.trim());
+          currentField = "";
+        } else {
+          currentField += char;
+        }
+      }
+      fields.push(currentField.trim());
+      
+      const [email, password, fullName, username, role, coursesStr] = fields;
+      
       if (email && password) {
+        // Parse courses - split by semicolon
+        const courses = coursesStr 
+          ? coursesStr.split(";").map((c) => c.trim()).filter(Boolean)
+          : [];
+        
         users.push({
           email,
           password,
           fullName: fullName || undefined,
           username: username || undefined,
           role: role === "admin" ? "admin" : "user",
+          courses,
         });
       }
     }
