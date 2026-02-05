@@ -21,8 +21,10 @@ import {
   Camera,
   Loader2,
   Star,
-  Target
+  Target,
+  KeyRound
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 // Schema de validação
@@ -57,6 +59,7 @@ const Profile = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Redireciona se não estiver autenticado
   useEffect(() => {
@@ -126,6 +129,31 @@ const Profile = () => {
       } else {
         toast.error("Erro ao atualizar perfil");
       }
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      toast.error("Email não encontrado");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+
+      if (error) {
+        toast.error("Erro ao enviar email de redefinição");
+        console.error(error);
+      } else {
+        toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
+      }
+    } catch (error) {
+      toast.error("Erro ao processar solicitação");
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -271,6 +299,35 @@ const Profile = () => {
                         O e-mail não pode ser alterado.
                       </p>
                     </div>
+
+                    <Separator />
+
+                    {/* Alterar Senha */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <KeyRound className="w-4 h-4" />
+                        Alterar Senha
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Para alterar sua senha, enviaremos um link de redefinição para seu e-mail cadastrado.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePasswordReset}
+                        disabled={isResettingPassword}
+                        className="gap-2"
+                      >
+                        {isResettingPassword ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                        {isResettingPassword ? "Enviando..." : "Enviar Link de Redefinição"}
+                      </Button>
+                    </div>
+
+                    <Separator />
 
                     {/* Botão de Salvar */}
                     <div className="flex justify-end">
