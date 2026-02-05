@@ -29,6 +29,7 @@ const App = () => (
             <Route path="/modulo/:moduleId" element={<ModulePage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/ranking" element={<Ranking />} />
+            <Route path="/perfil" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
