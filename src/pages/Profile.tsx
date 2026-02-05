@@ -132,6 +132,31 @@ const Profile = () => {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      toast.error("Email não encontrado");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`,
+      });
+
+      if (error) {
+        toast.error("Erro ao enviar email de redefinição");
+        console.error(error);
+      } else {
+        toast.success("Email de redefinição enviado! Verifique sua caixa de entrada.");
+      }
+    } catch (error) {
+      toast.error("Erro ao processar solicitação");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const getInitials = () => {
     if (formData.full_name) {
       return formData.full_name
