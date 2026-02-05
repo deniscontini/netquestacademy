@@ -386,11 +386,11 @@ const AdminUsers = () => {
                            </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              setSelectedUserForModules(user);
-                              setAssignModulesDialogOpen(true);
+                              setSelectedUserForCourses(user);
+                              setAssignCoursesDialogOpen(true);
                             }}
                           >
-                            <BookOpen className="w-4 h-4 mr-2" />
+                            <GraduationCap className="w-4 h-4 mr-2" />
                             Gerenciar Cursos
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
