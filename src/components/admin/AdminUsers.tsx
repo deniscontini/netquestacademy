@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useAdminUsers, useUpdateUserRole, useResetUserProgress, UserWithRole } from "@/hooks/useAdminData";
+ import { useAdminUsers, useUpdateUserRole, useResetUserProgress } from "@/hooks/useAdminData";
+ import { useAdminSubscriptions, getPlanInfo, SubscriptionPlan } from "@/hooks/useSubscriptions";
 import { useDeleteUser, useBatchDeleteUsers } from "@/hooks/useUserManagement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,15 +34,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2 } from "lucide-react";
+ import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddUserDialog from "./AddUserDialog";
 import BatchAddUsersDialog from "./BatchAddUsersDialog";
+ import ChangePlanDialog from "./ChangePlanDialog";
+ 
+ interface UserWithSubscription {
+   user_id: string;
+   id: string;
+   full_name: string | null;
+   username: string | null;
+   avatar_url: string | null;
+   xp: number;
+   level: number;
+   created_at: string;
+   role: "admin" | "user";
+   plan: SubscriptionPlan;
+ }
 
 const AdminUsers = () => {
   const { data: users, isLoading } = useAdminUsers();
+   const { data: subscriptions, isLoading: subsLoading } = useAdminSubscriptions();
   const updateRole = useUpdateUserRole();
   const resetProgress = useResetUserProgress();
   const deleteUser = useDeleteUser();
@@ -56,8 +72,19 @@ const AdminUsers = () => {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
   const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false);
+   const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
+   const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserWithSubscription | null>(null);
+ 
+   // Merge users with subscriptions
+   const usersWithSubscriptions: UserWithSubscription[] = users?.map((user) => {
+     const subscription = subscriptions?.find((s) => s.user_id === user.user_id);
+     return {
+       ...user,
+       plan: (subscription?.plan || "gratuito") as SubscriptionPlan,
+     };
+   }) || [];
 
-  const filteredUsers = users?.filter(
+   const filteredUsers = usersWithSubscriptions?.filter(
     (user) =>
       user.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       user.username?.toLowerCase().includes(search.toLowerCase())
@@ -165,7 +192,7 @@ const AdminUsers = () => {
     }
   };
 
-  if (isLoading) {
+   if (isLoading || subsLoading) {
     return (
       <Card>
         <CardHeader>
@@ -237,6 +264,7 @@ const AdminUsers = () => {
                   </TableHead>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Role</TableHead>
+                   <TableHead>Plano</TableHead>
                   <TableHead>Nível</TableHead>
                   <TableHead>XP</TableHead>
                   <TableHead>Criado em</TableHead>
@@ -286,6 +314,17 @@ const AdminUsers = () => {
                         {user.role}
                       </Badge>
                     </TableCell>
+                     <TableCell>
+                       {(() => {
+                         const planInfo = getPlanInfo(user.plan);
+                         return (
+                           <Badge variant={planInfo.color} className="gap-1">
+                             <Crown className="w-3 h-3" />
+                             {planInfo.label}
+                           </Badge>
+                         );
+                       })()}
+                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{user.level}</Badge>
                     </TableCell>
@@ -333,6 +372,15 @@ const AdminUsers = () => {
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Resetar Progresso
                           </DropdownMenuItem>
+                           <DropdownMenuItem
+                             onClick={() => {
+                               setSelectedUserForPlan(user);
+                               setChangePlanDialogOpen(true);
+                             }}
+                           >
+                             <Crown className="w-4 h-4 mr-2" />
+                             Alterar Plano
+                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
@@ -366,6 +414,20 @@ const AdminUsers = () => {
 
       {/* Batch Add Users Dialog */}
       <BatchAddUsersDialog open={batchAddDialogOpen} onOpenChange={setBatchAddDialogOpen} />
+
+       {/* Change Plan Dialog */}
+       {selectedUserForPlan && (
+         <ChangePlanDialog
+           open={changePlanDialogOpen}
+           onOpenChange={(open) => {
+             setChangePlanDialogOpen(open);
+             if (!open) setSelectedUserForPlan(null);
+           }}
+           userId={selectedUserForPlan.user_id}
+           userName={selectedUserForPlan.full_name || selectedUserForPlan.username || "Usuário"}
+           currentPlan={selectedUserForPlan.plan}
+         />
+       )}
 
       {/* Reset Progress Dialog */}
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
