@@ -40,7 +40,7 @@ const plans = [
   },
   {
     name: "Empresarial",
-    price: "A partir de 27,99",
+    price: "Sob consulta",
     period: "",
     description: "Para equipes e instituições de ensino",
     popular: false,
