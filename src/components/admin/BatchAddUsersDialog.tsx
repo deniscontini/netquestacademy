@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useBatchCreateUsers } from "@/hooks/useUserManagement";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Users, AlertCircle, CheckCircle2, Download, Upload } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface BatchAddUsersDialogProps {
   open: boolean;
