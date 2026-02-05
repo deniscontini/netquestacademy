@@ -34,14 +34,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown, BookOpen } from "lucide-react";
+import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddUserDialog from "./AddUserDialog";
 import BatchAddUsersDialog from "./BatchAddUsersDialog";
 import ChangePlanDialog from "./ChangePlanDialog";
-import AssignModulesDialog from "./AssignModulesDialog";
+import AssignCoursesDialog from "./AssignCoursesDialog";
  
  interface UserWithSubscription {
    user_id: string;
@@ -75,8 +75,8 @@ const AdminUsers = () => {
   const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false);
    const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
    const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserWithSubscription | null>(null);
-  const [assignModulesDialogOpen, setAssignModulesDialogOpen] = useState(false);
-  const [selectedUserForModules, setSelectedUserForModules] = useState<UserWithSubscription | null>(null);
+  const [assignCoursesDialogOpen, setAssignCoursesDialogOpen] = useState(false);
+  const [selectedUserForCourses, setSelectedUserForCourses] = useState<UserWithSubscription | null>(null);
  
    // Merge users with subscriptions
    const usersWithSubscriptions: UserWithSubscription[] = users?.map((user) => {
@@ -386,11 +386,11 @@ const AdminUsers = () => {
                            </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              setSelectedUserForModules(user);
-                              setAssignModulesDialogOpen(true);
+                              setSelectedUserForCourses(user);
+                              setAssignCoursesDialogOpen(true);
                             }}
                           >
-                            <BookOpen className="w-4 h-4 mr-2" />
+                            <GraduationCap className="w-4 h-4 mr-2" />
                             Gerenciar Cursos
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -510,16 +510,16 @@ const AdminUsers = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Assign Modules Dialog */}
-      {selectedUserForModules && (
-        <AssignModulesDialog
-          open={assignModulesDialogOpen}
+      {/* Assign Courses Dialog */}
+      {selectedUserForCourses && (
+        <AssignCoursesDialog
+          open={assignCoursesDialogOpen}
           onOpenChange={(open) => {
-            setAssignModulesDialogOpen(open);
-            if (!open) setSelectedUserForModules(null);
+            setAssignCoursesDialogOpen(open);
+            if (!open) setSelectedUserForCourses(null);
           }}
-          userId={selectedUserForModules.user_id}
-          userName={selectedUserForModules.full_name || selectedUserForModules.username || "Usuário"}
+          userId={selectedUserForCourses.user_id}
+          userName={selectedUserForCourses.full_name || selectedUserForCourses.username || "Usuário"}
         />
       )}
     </>

@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useBatchCreateUsers } from "@/hooks/useUserManagement";
-import { useAssignModules } from "@/hooks/useModuleAssignments";
-import { useModules } from "@/hooks/useModules";
+import { useAssignCourses } from "@/hooks/useCourseAssignments";
+import { useCourses } from "@/hooks/useCourses";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Users, AlertCircle, CheckCircle2, Download, Upload, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,17 +29,17 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
   const [csvData, setCsvData] = useState("");
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string; coursesAssigned?: number }[] | null>(null);
   const batchCreate = useBatchCreateUsers();
-  const assignModules = useAssignModules();
-  const { data: modules } = useModules();
+  const assignCourses = useAssignCourses();
+  const { data: courses } = useCourses();
   const { toast } = useToast();
 
   // Generate CSV template dynamically with available courses
   const generateCsvTemplate = () => {
-    const courseNames = modules?.map((m) => m.title).join("; ") || "";
+    const courseNames = courses?.map((c) => c.title).join("; ") || "";
     const header = `email,senha,nome,username,role,cursos`;
     const example1 = `joao@exemplo.com,senha123,João Silva,joaosilva,user,"Curso 1; Curso 2"`;
     const example2 = `maria@exemplo.com,senha456,Maria Santos,mariasantos,admin,`;
-    const example3 = `pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"${modules?.[0]?.title || "Nome do Curso"}"`;
+    const example3 = `pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"${courses?.[0]?.title || "Nome do Curso"}"`;
     
     return `${header}\n${example1}\n${example2}\n${example3}\n\n# Cursos disponíveis: ${courseNames || "Nenhum curso cadastrado"}`;
   };
@@ -168,7 +168,7 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
       
       // Build a map of course names to IDs
       const courseNameToId = new Map(
-        modules?.map((m) => [m.title.toLowerCase(), m.id]) || []
+        courses?.map((c) => [c.title.toLowerCase(), c.id]) || []
       );
 
       // Assign courses to successfully created users
@@ -201,9 +201,9 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
               .limit(1);
 
             if (profiles && profiles[0]) {
-              await assignModules.mutateAsync({
+              await assignCourses.mutateAsync({
                 userId: profiles[0].user_id,
-                moduleIds: courseIds,
+                courseIds: courseIds,
               });
               return { ...userResult, coursesAssigned: courseIds.length };
             }
@@ -290,7 +290,7 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
                         <TooltipContent className="max-w-xs">
                           <p className="font-medium mb-1">Cursos disponíveis:</p>
                           <p className="text-xs">
-                            {modules?.map((m) => m.title).join(", ") || "Nenhum curso cadastrado"}
+                            {courses?.map((c) => c.title).join(", ") || "Nenhum curso cadastrado"}
                           </p>
                         </TooltipContent>
                       </Tooltip>
