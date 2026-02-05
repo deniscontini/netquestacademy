@@ -272,17 +272,35 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
                 </TabsList>
                 
                 <TabsContent value="paste" className="space-y-4">
-                  <div>
-                    <Label>Formato: email,senha,nome,username,role</Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Apenas email e senha são obrigatórios. Role pode ser "user" ou "admin".
-                    </p>
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1">
+                      <Label>Formato: email,senha,nome,username,role,cursos</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Apenas email e senha são obrigatórios. Role pode ser "user" ou "admin".
+                        Cursos devem ser separados por ponto e vírgula (;).
+                      </p>
+                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" className="shrink-0">
+                            <Info className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="font-medium mb-1">Cursos disponíveis:</p>
+                          <p className="text-xs">
+                            {modules?.map((m) => m.title).join(", ") || "Nenhum curso cadastrado"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
 
                   <Textarea
-                    placeholder={`joao@exemplo.com,senha123,João Silva,joaosilva,user
-maria@exemplo.com,senha456,Maria Santos,mariasantos,admin
-pedro@exemplo.com,senha789`}
+                    placeholder={`joao@exemplo.com,senha123,João Silva,joaosilva,user,"Curso 1; Curso 2"
+maria@exemplo.com,senha456,Maria Santos,mariasantos,admin,
+pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"Nome do Curso"`}
                     value={csvData}
                     onChange={(e) => setCsvData(e.target.value)}
                     className="min-h-[200px] font-mono text-sm"
