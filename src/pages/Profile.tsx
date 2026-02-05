@@ -21,8 +21,10 @@ import {
   Camera,
   Loader2,
   Star,
-  Target
+  Target,
+  KeyRound
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 // Schema de validação
