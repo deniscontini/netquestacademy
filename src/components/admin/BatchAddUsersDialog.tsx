@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,21 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useBatchCreateUsers } from "@/hooks/useUserManagement";
+import { useAssignModules } from "@/hooks/useModuleAssignments";
+import { useModules } from "@/hooks/useModules";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, AlertCircle, CheckCircle2, Download, Upload } from "lucide-react";
+import { Loader2, Users, AlertCircle, CheckCircle2, Download, Upload, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface BatchAddUsersDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const CSV_TEMPLATE = `email,senha,nome,username,role
-joao@exemplo.com,senha123,João Silva,joaosilva,user
-maria@exemplo.com,senha456,Maria Santos,mariasantos,admin
-pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user`;
 
 const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) => {
   const [csvData, setCsvData] = useState("");
