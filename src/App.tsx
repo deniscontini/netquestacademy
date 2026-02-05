@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/admin" element={<Admin />} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/perfil" element={<Profile />} />
+            <Route path="/redefinir-senha" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
