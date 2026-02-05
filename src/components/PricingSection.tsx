@@ -22,7 +22,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "R$ 19,90",
+    price: "R$ 14,90",
     period: "/mês",
     description: "Acesso completo para dominar redes",
     popular: true,
