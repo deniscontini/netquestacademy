@@ -2,23 +2,54 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
-import { useModules, useUserModuleProgress } from "@/hooks/useModules";
+import { useCourses } from "@/hooks/useCourses";
 import { useUserAchievements } from "@/hooks/useAchievements";
 import { calculateProgress, getLevelTitle, getLevelColor, calculateXPForNextLevel } from "@/hooks/useGamification";
 import DashboardNavbar from "@/components/DashboardNavbar";
-import ModuleCard from "@/components/ModuleCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Zap, Flame, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Zap, Flame, GraduationCap, ChevronRight, Network, BookOpen } from "lucide-react";
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Network,
+  BookOpen,
+  GraduationCap,
+};
+
+const getDifficultyVariant = (difficulty: string) => {
+  switch (difficulty) {
+    case "iniciante":
+      return "level" as const;
+    case "intermediario":
+      return "gold" as const;
+    case "avancado":
+      return "diamond" as const;
+    default:
+      return "secondary" as const;
+  }
+};
+
+const getDifficultyLabel = (difficulty: string) => {
+  switch (difficulty) {
+    case "iniciante":
+      return "Iniciante";
+    case "intermediario":
+      return "Intermediário";
+    case "avancado":
+      return "Avançado";
+    default:
+      return difficulty;
+  }
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: modules, isLoading: modulesLoading } = useModules();
-  const { data: moduleProgress } = useUserModuleProgress();
+  const { data: courses, isLoading: coursesLoading } = useCourses();
   const { data: userAchievements } = useUserAchievements();
 
   useEffect(() => {
@@ -43,17 +74,6 @@ const Dashboard = () => {
 
   const xpProgress = profile ? calculateProgress(profile.xp, profile.level) : 0;
   const xpForNextLevel = profile ? calculateXPForNextLevel(profile.level) : 0;
-
-  // Determine which modules are unlocked (first 4 are always unlocked)
-  const getModuleStatus = (module: typeof modules[0], index: number) => {
-    const progress = moduleProgress?.find(p => p.module_id === module.id);
-    const isUnlocked = index < 4 || progress?.is_unlocked || false;
-    return {
-      isUnlocked,
-      isCompleted: progress?.is_completed || false,
-      progressPercentage: progress?.progress_percentage || 0,
-    };
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,36 +129,65 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Continue Learning Section */}
+        {/* Courses Section */}
         <section className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold">Continue Aprendendo</h2>
-              <p className="text-muted-foreground">Escolha um módulo para começar</p>
+              <h2 className="text-2xl font-bold">Meus Cursos</h2>
+              <p className="text-muted-foreground">Escolha um curso para continuar</p>
             </div>
             <Badge variant="outline" className="gap-1">
-              <Target className="w-3 h-3" />
-              {modules?.length || 0} Módulos
+              <GraduationCap className="w-3 h-3" />
+              {courses?.length || 0} Cursos
             </Badge>
           </div>
 
-          {modulesLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
+          {coursesLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-64" />
               ))}
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {modules?.map((module, index) => {
-                const status = getModuleStatus(module, index);
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses?.map((course) => {
+                const CourseIcon = iconMap[course.icon] || Network;
                 return (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    {...status}
-                    onClick={() => status.isUnlocked && navigate(`/modulo/${module.id}`)}
-                  />
+                  <Card
+                    key={course.id}
+                    variant="glow"
+                    className="relative group cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1"
+                    onClick={() => navigate(`/curso/${course.id}`)}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <CourseIcon className="w-7 h-7 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <Badge variant={getDifficultyVariant(course.difficulty)} className="mb-1">
+                            {getDifficultyLabel(course.difficulty)}
+                          </Badge>
+                          <h3 className="font-bold text-lg">{course.title}</h3>
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                        {course.description}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <Badge variant="xp" className="font-mono">
+                          <Zap className="w-3 h-3 mr-1" />
+                          {course.xp_reward} XP
+                        </Badge>
+                        <Button size="sm" variant="ghost" className="group/btn">
+                          Acessar
+                          <ChevronRight className="w-4 h-4 ml-1 group-hover/btn:translate-x-1 transition-transform" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
