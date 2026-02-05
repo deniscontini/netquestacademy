@@ -103,7 +103,8 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
   };
 
   const handleDownloadTemplate = () => {
-    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const template = generateCsvTemplate();
+    const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -116,7 +117,7 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
 
     toast({
       title: "Download iniciado",
-      description: "O modelo CSV foi baixado",
+      description: "O modelo CSV foi baixado com os cursos disponíveis",
     });
   };
 
