@@ -29,8 +29,8 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
   const [csvData, setCsvData] = useState("");
   const [results, setResults] = useState<{ email: string; success: boolean; error?: string; coursesAssigned?: number }[] | null>(null);
   const batchCreate = useBatchCreateUsers();
-  const assignModules = useAssignModules();
-  const { data: modules } = useModules();
+  const assignCourses = useAssignCourses();
+  const { data: courses } = useCourses();
   const { toast } = useToast();
 
   // Generate CSV template dynamically with available courses
