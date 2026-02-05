@@ -162,15 +162,68 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
     }
 
     try {
-      const result = await batchCreate.mutateAsync(users);
-      setResults(result.results);
+      // Create users first
+      const usersToCreate = users.map(({ courses, ...rest }) => rest);
+      const result = await batchCreate.mutateAsync(usersToCreate);
       
-      const successCount = result.results.filter((r) => r.success).length;
-      const failCount = result.results.filter((r) => !r.success).length;
+      // Build a map of course names to IDs
+      const courseNameToId = new Map(
+        modules?.map((m) => [m.title.toLowerCase(), m.id]) || []
+      );
+
+      // Assign courses to successfully created users
+      const resultsWithCourses = await Promise.all(
+        result.results.map(async (userResult, index) => {
+          if (!userResult.success) {
+            return userResult;
+          }
+
+          const userCourses = users[index]?.courses || [];
+          if (userCourses.length === 0) {
+            return { ...userResult, coursesAssigned: 0 };
+          }
+
+          // Find course IDs from names
+          const courseIds = userCourses
+            .map((name) => courseNameToId.get(name.toLowerCase()))
+            .filter((id): id is string => !!id);
+
+          if (courseIds.length === 0) {
+            return { ...userResult, coursesAssigned: 0 };
+          }
+
+          // We need to get the user ID - fetch by email
+          try {
+            const { data: profiles } = await (await import("@/integrations/supabase/client")).supabase
+              .from("profiles")
+              .select("user_id")
+              .ilike("username", users[index].email.split("@")[0])
+              .limit(1);
+
+            if (profiles && profiles[0]) {
+              await assignModules.mutateAsync({
+                userId: profiles[0].user_id,
+                moduleIds: courseIds,
+              });
+              return { ...userResult, coursesAssigned: courseIds.length };
+            }
+          } catch (e) {
+            console.error("Error assigning courses:", e);
+          }
+
+          return { ...userResult, coursesAssigned: 0 };
+        })
+      );
+
+      setResults(resultsWithCourses);
+      
+      const successCount = resultsWithCourses.filter((r) => r.success).length;
+      const failCount = resultsWithCourses.filter((r) => !r.success).length;
+      const coursesAssigned = resultsWithCourses.reduce((acc, r) => acc + (r.coursesAssigned || 0), 0);
 
       toast({
         title: "Operação concluída",
-        description: `${successCount} usuário(s) criado(s), ${failCount} falha(s)`,
+        description: `${successCount} usuário(s) criado(s), ${failCount} falha(s)${coursesAssigned > 0 ? `, ${coursesAssigned} curso(s) atribuído(s)` : ""}`,
         variant: failCount > 0 ? "destructive" : "default",
       });
     } catch (error: any) {
