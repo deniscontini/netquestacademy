@@ -168,7 +168,7 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
       
       // Build a map of course names to IDs
       const courseNameToId = new Map(
-        modules?.map((m) => [m.title.toLowerCase(), m.id]) || []
+        courses?.map((c) => [c.title.toLowerCase(), c.id]) || []
       );
 
       // Assign courses to successfully created users
@@ -201,9 +201,9 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
               .limit(1);
 
             if (profiles && profiles[0]) {
-              await assignModules.mutateAsync({
+              await assignCourses.mutateAsync({
                 userId: profiles[0].user_id,
-                moduleIds: courseIds,
+                courseIds: courseIds,
               });
               return { ...userResult, coursesAssigned: courseIds.length };
             }
