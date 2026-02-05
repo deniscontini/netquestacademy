@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import ModulePage from "./pages/ModulePage";
 import Admin from "./pages/Admin";
 import Ranking from "./pages/Ranking";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/modulo/:moduleId" element={<ModulePage />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/ranking" element={<Ranking />} />
+            <Route path="/perfil" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
