@@ -22,7 +22,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "R$ 29",
+    price: "R$ 19,90",
     period: "/mês",
     description: "Acesso completo para dominar redes",
     popular: true,
@@ -78,10 +78,10 @@ const PricingSection = () => {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
-            <Card 
-              key={index} 
+            <Card
+              key={index}
               variant={plan.popular ? "glow" : "elevated"}
-              className={`relative ${plan.popular ? 'scale-105 z-10' : ''}`}
+              className={`relative ${plan.popular ? "scale-105 z-10" : ""}`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
