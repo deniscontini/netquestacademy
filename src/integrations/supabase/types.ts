@@ -661,6 +661,47 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_questions_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          lesson_id: string | null
+          options: Json | null
+          order_index: number | null
+          question: string | null
+          updated_at: string | null
+          xp_reward: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          options?: never
+          order_index?: number | null
+          question?: string | null
+          updated_at?: string | null
+          xp_reward?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          lesson_id?: string | null
+          options?: never
+          order_index?: number | null
+          question?: string | null
+          updated_at?: string | null
+          xp_reward?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       award_achievement: {
@@ -678,6 +719,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      sanitize_quiz_options: { Args: { options: Json }; Returns: Json }
+      verify_quiz_answer: {
+        Args: { p_question_id: string; p_selected_option_id: string }
+        Returns: Json
       }
     }
     Enums: {
