@@ -377,11 +377,20 @@ const AdminUsers = () => {
                              onClick={() => {
                                setSelectedUserForPlan(user);
                                setChangePlanDialogOpen(true);
-                             }}
+                           }}
                            >
                              <Crown className="w-4 h-4 mr-2" />
                              Alterar Plano
                            </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedUserForModules(user);
+                              setAssignModulesDialogOpen(true);
+                            }}
+                          >
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Gerenciar Cursos
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
