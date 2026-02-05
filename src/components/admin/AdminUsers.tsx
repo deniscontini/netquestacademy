@@ -75,8 +75,8 @@ const AdminUsers = () => {
   const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false);
    const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
    const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserWithSubscription | null>(null);
-  const [assignModulesDialogOpen, setAssignModulesDialogOpen] = useState(false);
-  const [selectedUserForModules, setSelectedUserForModules] = useState<UserWithSubscription | null>(null);
+  const [assignCoursesDialogOpen, setAssignCoursesDialogOpen] = useState(false);
+  const [selectedUserForCourses, setSelectedUserForCourses] = useState<UserWithSubscription | null>(null);
  
    // Merge users with subscriptions
    const usersWithSubscriptions: UserWithSubscription[] = users?.map((user) => {
