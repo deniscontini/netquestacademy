@@ -1,4 +1,5 @@
 import { useModules } from "@/hooks/useModules";
+import { useCourses } from "@/hooks/useCourses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BookOpen, FlaskConical, Zap, Info } from "lucide-react";
+import { BookOpen, FlaskConical, Zap, Info, GraduationCap, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -62,6 +63,19 @@ const getDifficultyColor = (difficulty: string) => {
       return "bg-destructive/20 text-destructive border-destructive/30";
     default:
       return "";
+  }
+};
+
+const getDifficultyLabel = (difficulty: string) => {
+  switch (difficulty) {
+    case "iniciante":
+      return "Iniciante";
+    case "intermediario":
+      return "Intermediário";
+    case "avancado":
+      return "Avançado";
+    default:
+      return difficulty;
   }
 };
 
