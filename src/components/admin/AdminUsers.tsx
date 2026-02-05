@@ -34,13 +34,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
- import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown } from "lucide-react";
+import { Search, MoreVertical, Shield, User, RotateCcw, Zap, UserPlus, Users, Trash2, Crown, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddUserDialog from "./AddUserDialog";
 import BatchAddUsersDialog from "./BatchAddUsersDialog";
- import ChangePlanDialog from "./ChangePlanDialog";
+import ChangePlanDialog from "./ChangePlanDialog";
+import AssignModulesDialog from "./AssignModulesDialog";
  
  interface UserWithSubscription {
    user_id: string;
@@ -74,6 +75,8 @@ const AdminUsers = () => {
   const [batchAddDialogOpen, setBatchAddDialogOpen] = useState(false);
    const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
    const [selectedUserForPlan, setSelectedUserForPlan] = useState<UserWithSubscription | null>(null);
+  const [assignModulesDialogOpen, setAssignModulesDialogOpen] = useState(false);
+  const [selectedUserForModules, setSelectedUserForModules] = useState<UserWithSubscription | null>(null);
  
    // Merge users with subscriptions
    const usersWithSubscriptions: UserWithSubscription[] = users?.map((user) => {
@@ -376,11 +379,20 @@ const AdminUsers = () => {
                              onClick={() => {
                                setSelectedUserForPlan(user);
                                setChangePlanDialogOpen(true);
-                             }}
+                           }}
                            >
                              <Crown className="w-4 h-4 mr-2" />
                              Alterar Plano
                            </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedUserForModules(user);
+                              setAssignModulesDialogOpen(true);
+                            }}
+                          >
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Gerenciar Cursos
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
@@ -497,6 +509,19 @@ const AdminUsers = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign Modules Dialog */}
+      {selectedUserForModules && (
+        <AssignModulesDialog
+          open={assignModulesDialogOpen}
+          onOpenChange={(open) => {
+            setAssignModulesDialogOpen(open);
+            if (!open) setSelectedUserForModules(null);
+          }}
+          userId={selectedUserForModules.user_id}
+          userName={selectedUserForModules.full_name || selectedUserForModules.username || "Usuário"}
+        />
+      )}
     </>
   );
 };

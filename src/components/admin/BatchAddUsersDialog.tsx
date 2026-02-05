@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { z } from "zod";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +12,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useBatchCreateUsers } from "@/hooks/useUserManagement";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Users, AlertCircle, CheckCircle2, Download, Upload } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface BatchAddUsersDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const CSV_TEMPLATE = `email,senha,nome,username,role
+joao@exemplo.com,senha123,João Silva,joaosilva,user
+maria@exemplo.com,senha456,Maria Santos,mariasantos,admin
+pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user`;
 
 const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) => {
   const [csvData, setCsvData] = useState("");
@@ -31,7 +37,11 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
     const lines = data.trim().split("\n");
     const users: { email: string; password: string; fullName?: string; username?: string; role?: "admin" | "user" }[] = [];
 
-    for (const line of lines) {
+    // Skip header line if present
+    const startIndex = lines[0]?.toLowerCase().includes("email") ? 1 : 0;
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i];
       const [email, password, fullName, username, role] = line.split(",").map((s) => s.trim());
       if (email && password) {
         users.push({
@@ -45,6 +55,52 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
     }
 
     return users;
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "modelo_usuarios.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Download iniciado",
+      description: "O modelo CSV foi baixado",
+    });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".csv")) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, envie um arquivo CSV",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setCsvData(text);
+      toast({
+        title: "Arquivo carregado",
+        description: `${file.name} foi carregado com sucesso`,
+      });
+    };
+    reader.readAsText(file);
+
+    // Reset input
+    event.target.value = "";
   };
 
   const handleSubmit = async () => {
@@ -102,21 +158,69 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
         {!results ? (
           <>
             <div className="space-y-4">
-              <div>
-                <Label>Formato: email,senha,nome,username,role</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Apenas email e senha são obrigatórios. Role pode ser "user" ou "admin".
-                </p>
+              {/* Download template button */}
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Baixar Modelo CSV
+                </Button>
               </div>
 
-              <Textarea
-                placeholder={`joao@exemplo.com,senha123,João Silva,joaosilva,user
+              <Tabs defaultValue="paste" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="paste">Colar Dados</TabsTrigger>
+                  <TabsTrigger value="upload">Upload de Arquivo</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="paste" className="space-y-4">
+                  <div>
+                    <Label>Formato: email,senha,nome,username,role</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Apenas email e senha são obrigatórios. Role pode ser "user" ou "admin".
+                    </p>
+                  </div>
+
+                  <Textarea
+                    placeholder={`joao@exemplo.com,senha123,João Silva,joaosilva,user
 maria@exemplo.com,senha456,Maria Santos,mariasantos,admin
 pedro@exemplo.com,senha789`}
-                value={csvData}
-                onChange={(e) => setCsvData(e.target.value)}
-                className="min-h-[200px] font-mono text-sm"
-              />
+                    value={csvData}
+                    onChange={(e) => setCsvData(e.target.value)}
+                    className="min-h-[200px] font-mono text-sm"
+                  />
+                </TabsContent>
+
+                <TabsContent value="upload" className="space-y-4">
+                  <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-4" />
+                    <Label htmlFor="csv-upload" className="cursor-pointer">
+                      <span className="text-primary hover:underline">Clique para selecionar</span>
+                      <span className="text-muted-foreground"> ou arraste o arquivo CSV</span>
+                    </Label>
+                    <Input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Somente arquivos .csv são aceitos
+                    </p>
+                  </div>
+
+                  {csvData && (
+                    <div className="space-y-2">
+                      <Label>Pré-visualização dos dados</Label>
+                      <Textarea
+                        value={csvData}
+                        onChange={(e) => setCsvData(e.target.value)}
+                        className="min-h-[150px] font-mono text-sm"
+                      />
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
 
             <DialogFooter>
