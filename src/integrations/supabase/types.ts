@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          difficulty: Database["public"]["Enums"]["difficulty_level"]
+          icon: string
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          updated_at: string
+          xp_reward: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          icon?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          difficulty?: Database["public"]["Enums"]["difficulty_level"]
+          icon?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          updated_at?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       labs: {
         Row: {
           created_at: string
@@ -155,6 +194,7 @@ export type Database = {
       }
       modules: {
         Row: {
+          course_id: string | null
           created_at: string
           description: string | null
           difficulty: Database["public"]["Enums"]["difficulty_level"]
@@ -168,6 +208,7 @@ export type Database = {
           xp_reward: number
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"]
@@ -181,6 +222,7 @@ export type Database = {
           xp_reward?: number
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"]
@@ -194,6 +236,13 @@ export type Database = {
           xp_reward?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "modules_prerequisite_module_id_fkey"
             columns: ["prerequisite_module_id"]

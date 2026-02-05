@@ -23,8 +23,8 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#modulos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Módulos
+            <a href="#cursos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Cursos
             </a>
             <a href="#labs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Laboratórios
@@ -68,8 +68,8 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
-              <a href="#modulos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Módulos
+              <a href="#cursos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Cursos
               </a>
               <a href="#labs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Laboratórios

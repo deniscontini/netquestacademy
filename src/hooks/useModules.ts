@@ -12,6 +12,7 @@ export interface Module {
   xp_reward: number;
   is_active: boolean;
   prerequisite_module_id: string | null;
+  course_id: string | null;
   created_at: string;
   updated_at: string;
 }
