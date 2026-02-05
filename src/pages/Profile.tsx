@@ -300,6 +300,35 @@ const Profile = () => {
                       </p>
                     </div>
 
+                    <Separator />
+
+                    {/* Alterar Senha */}
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2">
+                        <KeyRound className="w-4 h-4" />
+                        Alterar Senha
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Para alterar sua senha, enviaremos um link de redefinição para seu e-mail cadastrado.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePasswordReset}
+                        disabled={isResettingPassword}
+                        className="gap-2"
+                      >
+                        {isResettingPassword ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                        {isResettingPassword ? "Enviando..." : "Enviar Link de Redefinição"}
+                      </Button>
+                    </div>
+
+                    <Separator />
+
                     {/* Botão de Salvar */}
                     <div className="flex justify-end">
                       <Button 
