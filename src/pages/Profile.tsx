@@ -59,6 +59,7 @@ const Profile = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   // Redireciona se não estiver autenticado
   useEffect(() => {
