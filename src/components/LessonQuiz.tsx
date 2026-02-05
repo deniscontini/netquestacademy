@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Trophy, Zap, ArrowRight, RotateCcw, Brain } from "lucide-react";
+import { CheckCircle, XCircle, Trophy, ArrowRight, RotateCcw, Brain, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useVerifyAnswer, VerifyAnswerResult } from "@/hooks/useQuiz";
 
 export interface QuizQuestion {
   id: string;
   question: string;
-  options: { text: string; is_correct: boolean }[];
-  explanation?: string;
+  options: { text: string; id: string }[];
   xp_reward: number;
 }
 
@@ -31,24 +31,36 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
   const [xpEarned, setXpEarned] = useState(0);
   const [showResults, setShowResults] = useState(false);
   const [answers, setAnswers] = useState<{ questionId: string; isCorrect: boolean }[]>([]);
+  const [verificationResult, setVerificationResult] = useState<VerifyAnswerResult | null>(null);
+  
+  const verifyAnswerMutation = useVerifyAnswer();
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
-  const handleAnswer = () => {
+  const handleAnswer = async () => {
     if (!selectedAnswer || hasAnswered) return;
 
-    const selectedOption = currentQuestion.options.find(
-      (opt, idx) => `option-${idx}` === selectedAnswer
-    );
-    const isCorrect = selectedOption?.is_correct || false;
+    // Get the selected option ID
+    const selectedOptionId = selectedAnswer;
 
-    setHasAnswered(true);
-    setAnswers([...answers, { questionId: currentQuestion.id, isCorrect }]);
+    try {
+      // Verify the answer server-side
+      const result = await verifyAnswerMutation.mutateAsync({
+        questionId: currentQuestion.id,
+        selectedOptionId,
+      });
 
-    if (isCorrect) {
-      setScore(score + 1);
-      setXpEarned(xpEarned + currentQuestion.xp_reward);
+      setVerificationResult(result);
+      setHasAnswered(true);
+      setAnswers([...answers, { questionId: currentQuestion.id, isCorrect: result.is_correct }]);
+
+      if (result.is_correct) {
+        setScore(score + 1);
+        setXpEarned(xpEarned + currentQuestion.xp_reward);
+      }
+    } catch (error) {
+      console.error("Error verifying answer:", error);
     }
   };
 
@@ -57,9 +69,10 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
       setHasAnswered(false);
+      setVerificationResult(null);
     } else {
       setShowResults(true);
-      onComplete(score + (hasAnswered && answers[answers.length - 1]?.isCorrect ? 0 : 0), questions.length, xpEarned);
+      onComplete(score, questions.length, xpEarned);
     }
   };
 
@@ -71,6 +84,7 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
     setXpEarned(0);
     setShowResults(false);
     setAnswers([]);
+    setVerificationResult(null);
   };
 
   if (questions.length === 0) return null;
@@ -162,9 +176,6 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
   }
 
   // Show quiz question
-  const selectedOptionIndex = selectedAnswer ? parseInt(selectedAnswer.split('-')[1]) : -1;
-  const correctOptionIndex = currentQuestion.options.findIndex(opt => opt.is_correct);
-
   return (
     <Card className="mt-8 border-primary/20">
       <CardHeader className="pb-4">
@@ -196,16 +207,16 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
           disabled={hasAnswered}
           className="space-y-3"
         >
-          {currentQuestion.options.map((option, index) => {
-            const optionId = `option-${index}`;
-            const isSelected = selectedAnswer === optionId;
-            const isCorrect = option.is_correct;
+          {currentQuestion.options.map((option) => {
+            const isSelected = selectedAnswer === option.id;
+            const isCorrectAnswer = hasAnswered && verificationResult?.correct_answer === option.text;
+            const isWrongSelection = hasAnswered && isSelected && !verificationResult?.is_correct;
             
             let optionStyle = "border-border hover:border-primary/50";
             if (hasAnswered) {
-              if (isCorrect) {
+              if (isCorrectAnswer) {
                 optionStyle = "border-accent bg-accent/10";
-              } else if (isSelected && !isCorrect) {
+              } else if (isWrongSelection) {
                 optionStyle = "border-destructive bg-destructive/10";
               }
             } else if (isSelected) {
@@ -214,20 +225,20 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
 
             return (
               <Label
-                key={optionId}
-                htmlFor={optionId}
+                key={option.id}
+                htmlFor={option.id}
                 className={cn(
                   "flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all",
                   optionStyle,
                   hasAnswered && "cursor-default"
                 )}
               >
-                <RadioGroupItem value={optionId} id={optionId} />
+                <RadioGroupItem value={option.id} id={option.id} />
                 <span className="flex-1 text-foreground">{option.text}</span>
-                {hasAnswered && isCorrect && (
+                {hasAnswered && isCorrectAnswer && (
                   <CheckCircle className="w-5 h-5 text-accent" />
                 )}
-                {hasAnswered && isSelected && !isCorrect && (
+                {isWrongSelection && (
                   <XCircle className="w-5 h-5 text-destructive" />
                 )}
               </Label>
@@ -236,11 +247,11 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
         </RadioGroup>
 
         {/* Explanation */}
-        {hasAnswered && currentQuestion.explanation && (
+        {hasAnswered && verificationResult?.explanation && (
           <div className="p-4 bg-muted/50 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
               <span className="font-semibold text-foreground">Explicação:</span>{" "}
-              {currentQuestion.explanation}
+              {verificationResult.explanation}
             </p>
           </div>
         )}
@@ -250,10 +261,17 @@ const LessonQuiz = ({ questions, onComplete, isCompleted, previousScore }: Lesso
           {!hasAnswered ? (
             <Button 
               onClick={handleAnswer} 
-              disabled={!selectedAnswer}
+              disabled={!selectedAnswer || verifyAnswerMutation.isPending}
               className="gap-2"
             >
-              Confirmar Resposta
+              {verifyAnswerMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                "Confirmar Resposta"
+              )}
             </Button>
           ) : (
             <Button onClick={handleNext} className="gap-2">
