@@ -80,11 +80,12 @@ const getDifficultyLabel = (difficulty: string) => {
 };
 
 const AdminContent = () => {
+  const { data: courses, isLoading: coursesLoading } = useCourses();
   const { data: modules, isLoading: modulesLoading } = useModules();
   const { data: lessons, isLoading: lessonsLoading } = useLessonsForModules();
   const { data: labs, isLoading: labsLoading } = useLabsForModules();
 
-  const isLoading = modulesLoading || lessonsLoading || labsLoading;
+  const isLoading = coursesLoading || modulesLoading || lessonsLoading || labsLoading;
 
   if (isLoading) {
     return (
@@ -109,7 +110,7 @@ const AdminContent = () => {
             <div>
               <p className="font-medium">Gerenciamento de Conteúdo</p>
               <p className="text-sm text-muted-foreground">
-                Visualize os módulos, lições e laboratórios da plataforma. Para
+                Visualize os cursos, módulos, lições e laboratórios da plataforma. Para
                 adicionar ou editar conteúdo, utilize o painel do backend.
               </p>
             </div>
@@ -117,50 +118,57 @@ const AdminContent = () => {
         </CardContent>
       </Card>
 
-      {/* Modules Accordion */}
+      {/* Courses Accordion */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            Módulos e Conteúdo ({modules?.length || 0} módulos)
+            <GraduationCap className="w-5 h-5" />
+            Cursos e Conteúdo ({courses?.length || 0} cursos)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <Accordion type="multiple" className="space-y-2">
-            {modules?.map((module) => {
-              const moduleLessons = lessons?.filter(
-                (l) => l.module_id === module.id
-              );
-              const moduleLabs = labs?.filter((l) => l.module_id === module.id);
+            {courses?.map((course) => {
+              const courseModules = modules?.filter((m) => m.course_id === course.id);
+              const totalLessons = courseModules?.reduce((acc, m) => {
+                const moduleLessons = lessons?.filter((l) => l.module_id === m.id);
+                return acc + (moduleLessons?.length || 0);
+              }, 0);
+              const totalLabs = courseModules?.reduce((acc, m) => {
+                const moduleLabs = labs?.filter((l) => l.module_id === m.id);
+                return acc + (moduleLabs?.length || 0);
+              }, 0);
 
               return (
                 <AccordionItem
-                  key={module.id}
-                  value={module.id}
+                  key={course.id}
+                  value={course.id}
                   className="border rounded-lg px-4"
                 >
                   <AccordionTrigger className="hover:no-underline py-4">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-lg font-bold text-white">
-                        {module.order_index + 1}
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                        <GraduationCap className="w-5 h-5 text-white" />
                       </div>
                       <div className="text-left flex-1">
-                        <p className="font-semibold">{module.title}</p>
+                        <p className="font-semibold">{course.title}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Badge
                             variant="outline"
-                            className={getDifficultyColor(module.difficulty)}
+                            className={getDifficultyColor(course.difficulty)}
                           >
-                            {module.difficulty}
+                            {getDifficultyLabel(course.difficulty)}
                           </Badge>
                           <span>•</span>
-                          <span>{moduleLessons?.length || 0} lições</span>
+                          <span>{courseModules?.length || 0} módulos</span>
                           <span>•</span>
-                          <span>{moduleLabs?.length || 0} labs</span>
+                          <span>{totalLessons || 0} lições</span>
+                          <span>•</span>
+                          <span>{totalLabs || 0} labs</span>
                           <span>•</span>
                           <span className="flex items-center gap-1">
                             <Zap className="w-3 h-3" />
-                            {module.xp_reward} XP
+                            {course.xp_reward} XP
                           </span>
                         </div>
                       </div>
@@ -168,105 +176,157 @@ const AdminContent = () => {
                   </AccordionTrigger>
                   <AccordionContent className="pb-4">
                     <div className="space-y-4 pt-2">
-                      {/* Lessons */}
-                      {moduleLessons && moduleLessons.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                            <BookOpen className="w-4 h-4" />
-                            Lições
-                          </h4>
-                          <div className="rounded-lg border overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-12">#</TableHead>
-                                  <TableHead>Título</TableHead>
-                                  <TableHead>Duração</TableHead>
-                                  <TableHead>XP</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {moduleLessons.map((lesson) => (
-                                  <TableRow key={lesson.id}>
-                                    <TableCell className="font-mono">
-                                      {lesson.order_index + 1}
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      {lesson.title}
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                      {lesson.duration_minutes || 10} min
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge variant="xp" className="gap-1">
-                                        <Zap className="w-3 h-3" />
-                                        {lesson.xp_reward}
-                                      </Badge>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      )}
+                      {/* Modules within Course */}
+                      {courseModules && courseModules.length > 0 ? (
+                        <Accordion type="multiple" className="space-y-2 ml-4">
+                          {courseModules.map((module, moduleIndex) => {
+                            const moduleLessons = lessons?.filter(
+                              (l) => l.module_id === module.id
+                            );
+                            const moduleLabs = labs?.filter(
+                              (l) => l.module_id === module.id
+                            );
 
-                      {/* Labs */}
-                      {moduleLabs && moduleLabs.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                            <FlaskConical className="w-4 h-4" />
-                            Laboratórios
-                          </h4>
-                          <div className="rounded-lg border overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead className="w-12">#</TableHead>
-                                  <TableHead>Título</TableHead>
-                                  <TableHead>Dificuldade</TableHead>
-                                  <TableHead>XP</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {moduleLabs.map((lab) => (
-                                  <TableRow key={lab.id}>
-                                    <TableCell className="font-mono">
-                                      {(lab.order_index || 0) + 1}
-                                    </TableCell>
-                                    <TableCell className="font-medium">
-                                      {lab.title}
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge
-                                        variant="outline"
-                                        className={getDifficultyColor(
-                                          lab.difficulty || "iniciante"
-                                        )}
-                                      >
-                                        {lab.difficulty}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                      <Badge variant="xp" className="gap-1">
-                                        <Zap className="w-3 h-3" />
-                                        {lab.xp_reward}
-                                      </Badge>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      )}
+                            return (
+                              <AccordionItem
+                                key={module.id}
+                                value={module.id}
+                                className="border rounded-lg px-4"
+                              >
+                                <AccordionTrigger className="hover:no-underline py-3">
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-sm font-bold">
+                                      {moduleIndex + 1}
+                                    </div>
+                                    <div className="text-left flex-1">
+                                      <p className="font-medium text-sm">{module.title}</p>
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <Badge
+                                          variant="outline"
+                                          className={getDifficultyColor(module.difficulty)}
+                                        >
+                                          {getDifficultyLabel(module.difficulty)}
+                                        </Badge>
+                                        <span>•</span>
+                                        <span>{moduleLessons?.length || 0} lições</span>
+                                        <span>•</span>
+                                        <span>{moduleLabs?.length || 0} labs</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-3">
+                                  <div className="space-y-3 pt-2">
+                                    {/* Lessons */}
+                                    {moduleLessons && moduleLessons.length > 0 && (
+                                      <div>
+                                        <h4 className="text-xs font-medium mb-2 flex items-center gap-2">
+                                          <BookOpen className="w-3 h-3" />
+                                          Lições
+                                        </h4>
+                                        <div className="rounded-lg border overflow-hidden">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead className="w-10">#</TableHead>
+                                                <TableHead>Título</TableHead>
+                                                <TableHead>Duração</TableHead>
+                                                <TableHead>XP</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {moduleLessons.map((lesson) => (
+                                                <TableRow key={lesson.id}>
+                                                  <TableCell className="font-mono text-xs">
+                                                    {lesson.order_index + 1}
+                                                  </TableCell>
+                                                  <TableCell className="font-medium text-sm">
+                                                    {lesson.title}
+                                                  </TableCell>
+                                                  <TableCell className="text-muted-foreground text-sm">
+                                                    {lesson.duration_minutes || 10} min
+                                                  </TableCell>
+                                                  <TableCell>
+                                                    <Badge variant="xp" className="gap-1 text-xs">
+                                                      <Zap className="w-2 h-2" />
+                                                      {lesson.xp_reward}
+                                                    </Badge>
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
+                                    )}
 
-                      {(!moduleLessons || moduleLessons.length === 0) &&
-                        (!moduleLabs || moduleLabs.length === 0) && (
-                          <p className="text-sm text-muted-foreground text-center py-4">
-                            Nenhum conteúdo cadastrado neste módulo
-                          </p>
-                        )}
+                                    {/* Labs */}
+                                    {moduleLabs && moduleLabs.length > 0 && (
+                                      <div>
+                                        <h4 className="text-xs font-medium mb-2 flex items-center gap-2">
+                                          <FlaskConical className="w-3 h-3" />
+                                          Laboratórios
+                                        </h4>
+                                        <div className="rounded-lg border overflow-hidden">
+                                          <Table>
+                                            <TableHeader>
+                                              <TableRow>
+                                                <TableHead className="w-10">#</TableHead>
+                                                <TableHead>Título</TableHead>
+                                                <TableHead>Dificuldade</TableHead>
+                                                <TableHead>XP</TableHead>
+                                              </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                              {moduleLabs.map((lab) => (
+                                                <TableRow key={lab.id}>
+                                                  <TableCell className="font-mono text-xs">
+                                                    {(lab.order_index || 0) + 1}
+                                                  </TableCell>
+                                                  <TableCell className="font-medium text-sm">
+                                                    {lab.title}
+                                                  </TableCell>
+                                                  <TableCell>
+                                                    <Badge
+                                                      variant="outline"
+                                                      className={getDifficultyColor(
+                                                        lab.difficulty || "iniciante"
+                                                      )}
+                                                    >
+                                                      {getDifficultyLabel(lab.difficulty || "iniciante")}
+                                                    </Badge>
+                                                  </TableCell>
+                                                  <TableCell>
+                                                    <Badge variant="xp" className="gap-1 text-xs">
+                                                      <Zap className="w-2 h-2" />
+                                                      {lab.xp_reward}
+                                                    </Badge>
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))}
+                                            </TableBody>
+                                          </Table>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {(!moduleLessons || moduleLessons.length === 0) &&
+                                      (!moduleLabs || moduleLabs.length === 0) && (
+                                        <p className="text-xs text-muted-foreground text-center py-2">
+                                          Nenhum conteúdo neste módulo
+                                        </p>
+                                      )}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            );
+                          })}
+                        </Accordion>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nenhum módulo cadastrado neste curso
+                        </p>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
