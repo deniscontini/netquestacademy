@@ -215,11 +215,11 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
         })
       );
 
-      setResults(resultsWithCourses);
+      setResults(resultsWithCourses as { email: string; success: boolean; error?: string; coursesAssigned?: number }[]);
       
       const successCount = resultsWithCourses.filter((r) => r.success).length;
       const failCount = resultsWithCourses.filter((r) => !r.success).length;
-      const coursesAssigned = resultsWithCourses.reduce((acc, r) => acc + (r.coursesAssigned || 0), 0);
+      const coursesAssigned = resultsWithCourses.reduce((acc, r) => acc + ((r as any).coursesAssigned || 0), 0);
 
       toast({
         title: "Operação concluída",
