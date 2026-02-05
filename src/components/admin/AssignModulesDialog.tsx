@@ -124,7 +124,7 @@ const AssignModulesDialog = ({
             Gerenciar Cursos - {userName}
           </DialogTitle>
           <DialogDescription>
-            Atribua módulos específicos para este usuário além do plano de assinatura
+            Atribua cursos específicos para este usuário além do plano de assinatura
           </DialogDescription>
         </DialogHeader>
 
