@@ -124,7 +124,7 @@ const AssignModulesDialog = ({
             Gerenciar Cursos - {userName}
           </DialogTitle>
           <DialogDescription>
-            Atribua módulos específicos para este usuário além do plano de assinatura
+            Atribua cursos específicos para este usuário além do plano de assinatura
           </DialogDescription>
         </DialogHeader>
 
@@ -134,10 +134,10 @@ const AssignModulesDialog = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Currently assigned modules */}
+            {/* Currently assigned courses */}
             {assignedModulesData.length > 0 && (
               <div className="space-y-2">
-                <Label>Módulos Atribuídos</Label>
+                <Label>Cursos Atribuídos</Label>
                 <div className="flex flex-wrap gap-2">
                   {assignedModulesData.map((module) => (
                     <Badge
@@ -159,12 +159,12 @@ const AssignModulesDialog = ({
               </div>
             )}
 
-            {/* Available modules to assign */}
+            {/* Available courses to assign */}
             <div className="space-y-2">
-              <Label>Módulos Disponíveis</Label>
+              <Label>Cursos Disponíveis</Label>
               {availableModules.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Todos os módulos já foram atribuídos
+                  Todos os cursos já foram atribuídos
                 </p>
               ) : (
                 <ScrollArea className="h-[200px] rounded-md border p-4">
