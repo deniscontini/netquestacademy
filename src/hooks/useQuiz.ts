@@ -68,7 +68,7 @@ export const useVerifyAnswer = () => {
       });
 
       if (error) throw error;
-      return data as VerifyAnswerResult;
+      return data as unknown as VerifyAnswerResult;
     },
   });
 };
