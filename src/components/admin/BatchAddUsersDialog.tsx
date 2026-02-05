@@ -35,11 +35,11 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
 
   // Generate CSV template dynamically with available courses
   const generateCsvTemplate = () => {
-    const courseNames = modules?.map((m) => m.title).join("; ") || "";
+    const courseNames = courses?.map((c) => c.title).join("; ") || "";
     const header = `email,senha,nome,username,role,cursos`;
     const example1 = `joao@exemplo.com,senha123,João Silva,joaosilva,user,"Curso 1; Curso 2"`;
     const example2 = `maria@exemplo.com,senha456,Maria Santos,mariasantos,admin,`;
-    const example3 = `pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"${modules?.[0]?.title || "Nome do Curso"}"`;
+    const example3 = `pedro@exemplo.com,senha789,Pedro Costa,pedrocosta,user,"${courses?.[0]?.title || "Nome do Curso"}"`;
     
     return `${header}\n${example1}\n${example2}\n${example3}\n\n# Cursos disponíveis: ${courseNames || "Nenhum curso cadastrado"}`;
   };
