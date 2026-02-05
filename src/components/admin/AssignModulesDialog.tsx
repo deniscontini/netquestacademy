@@ -134,10 +134,10 @@ const AssignModulesDialog = ({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Currently assigned modules */}
+            {/* Currently assigned courses */}
             {assignedModulesData.length > 0 && (
               <div className="space-y-2">
-                <Label>Módulos Atribuídos</Label>
+                <Label>Cursos Atribuídos</Label>
                 <div className="flex flex-wrap gap-2">
                   {assignedModulesData.map((module) => (
                     <Badge
