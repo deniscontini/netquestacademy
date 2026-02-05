@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import ModulePage from "./pages/ModulePage";
 import Admin from "./pages/Admin";
 import Ranking from "./pages/Ranking";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
