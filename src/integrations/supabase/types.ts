@@ -407,6 +407,47 @@ export type Database = {
           },
         ]
       }
+      user_module_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          module_id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          module_id: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          module_id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_module_assignments_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_module_progress: {
         Row: {
           completed_at: string | null
