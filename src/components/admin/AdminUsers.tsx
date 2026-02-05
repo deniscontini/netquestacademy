@@ -510,16 +510,16 @@ const AdminUsers = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Assign Modules Dialog */}
-      {selectedUserForModules && (
-        <AssignModulesDialog
-          open={assignModulesDialogOpen}
+      {/* Assign Courses Dialog */}
+      {selectedUserForCourses && (
+        <AssignCoursesDialog
+          open={assignCoursesDialogOpen}
           onOpenChange={(open) => {
-            setAssignModulesDialogOpen(open);
-            if (!open) setSelectedUserForModules(null);
+            setAssignCoursesDialogOpen(open);
+            if (!open) setSelectedUserForCourses(null);
           }}
-          userId={selectedUserForModules.user_id}
-          userName={selectedUserForModules.full_name || selectedUserForModules.username || "Usuário"}
+          userId={selectedUserForCourses.user_id}
+          userName={selectedUserForCourses.full_name || selectedUserForCourses.username || "Usuário"}
         />
       )}
     </>

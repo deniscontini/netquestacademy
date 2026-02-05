@@ -290,7 +290,7 @@ const BatchAddUsersDialog = ({ open, onOpenChange }: BatchAddUsersDialogProps) =
                         <TooltipContent className="max-w-xs">
                           <p className="font-medium mb-1">Cursos disponíveis:</p>
                           <p className="text-xs">
-                            {modules?.map((m) => m.title).join(", ") || "Nenhum curso cadastrado"}
+                            {courses?.map((c) => c.title).join(", ") || "Nenhum curso cadastrado"}
                           </p>
                         </TooltipContent>
                       </Tooltip>
