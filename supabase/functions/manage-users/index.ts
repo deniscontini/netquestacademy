@@ -105,12 +105,21 @@ Deno.serve(async (req) => {
           );
         }
 
-        // If role is admin, update the user_roles table
-        if (body.role === "admin" && newUser.user) {
-          await supabaseAdmin
-            .from("user_roles")
-            .update({ role: "admin" })
-            .eq("user_id", newUser.user.id);
+        if (newUser.user) {
+          // If role is admin, update the user_roles table
+          if (body.role === "admin") {
+            await supabaseAdmin
+              .from("user_roles")
+              .update({ role: "admin" })
+              .eq("user_id", newUser.user.id);
+          }
+
+          // Link student to the admin who created them (only for non-admin users)
+          if (body.role !== "admin") {
+            await supabaseAdmin
+              .from("admin_students")
+              .insert({ admin_id: caller.id, student_id: newUser.user.id });
+          }
         }
 
         return new Response(
@@ -136,6 +145,28 @@ Deno.serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+
+        // Verify admin owns this student
+        const { data: link } = await supabaseAdmin
+          .from("admin_students")
+          .select("id")
+          .eq("admin_id", caller.id)
+          .eq("student_id", body.userId)
+          .single();
+
+        if (!link) {
+          return new Response(
+            JSON.stringify({ error: "You can only delete students linked to your account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Remove admin_students link
+        await supabaseAdmin
+          .from("admin_students")
+          .delete()
+          .eq("admin_id", caller.id)
+          .eq("student_id", body.userId);
 
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(body.userId);
 
@@ -183,11 +214,18 @@ Deno.serve(async (req) => {
           if (createError) {
             results.push({ email: user.email, success: false, error: createError.message });
           } else {
-            if (user.role === "admin" && newUser.user) {
-              await supabaseAdmin
-                .from("user_roles")
-                .update({ role: "admin" })
-                .eq("user_id", newUser.user.id);
+            if (newUser.user) {
+              if (user.role === "admin") {
+                await supabaseAdmin
+                  .from("user_roles")
+                  .update({ role: "admin" })
+                  .eq("user_id", newUser.user.id);
+              } else {
+                // Link student to the admin who created them
+                await supabaseAdmin
+                  .from("admin_students")
+                  .insert({ admin_id: caller.id, student_id: newUser.user.id });
+              }
             }
             results.push({ email: user.email, success: true });
           }
@@ -214,6 +252,26 @@ Deno.serve(async (req) => {
         const results: { userId: string; success: boolean; error?: string }[] = [];
 
         for (const userId of idsToDelete) {
+          // Verify admin owns this student
+          const { data: link } = await supabaseAdmin
+            .from("admin_students")
+            .select("id")
+            .eq("admin_id", caller.id)
+            .eq("student_id", userId)
+            .single();
+
+          if (!link) {
+            results.push({ userId, success: false, error: "Not your student" });
+            continue;
+          }
+
+          // Remove link
+          await supabaseAdmin
+            .from("admin_students")
+            .delete()
+            .eq("admin_id", caller.id)
+            .eq("student_id", userId);
+
           const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
           if (deleteError) {
