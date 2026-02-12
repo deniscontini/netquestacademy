@@ -12,6 +12,11 @@ export interface Course {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  owner_id: string;
+  syllabus: string | null;
+  curriculum: string | null;
+  bibliography: string | null;
+  pdf_url: string | null;
 }
 
 export const useCourses = () => {
