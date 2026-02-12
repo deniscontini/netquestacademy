@@ -27,7 +27,7 @@ import {
 import CourseContentPreview from "./CourseContentPreview";
 import { Sparkles, Upload, X, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 interface CreateCourseDialogProps {
   open: boolean;
@@ -148,7 +148,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         onOpenChange(o);
       }}
     >
-      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-3xl h-[90vh] !flex !flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-base sm:text-lg">
             {step === "form" ? "Criar Novo Curso" : "Revisar Estrutura do Curso"}
@@ -160,7 +160,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-2 sm:pr-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2 sm:pr-3">
           {step === "form" ? (
             <div className="space-y-3 sm:space-y-4 pb-4">
               {/* Title */}
@@ -347,7 +347,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               </Button>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
