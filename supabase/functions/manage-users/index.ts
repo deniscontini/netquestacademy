@@ -13,6 +13,13 @@ interface CreateUserRequest {
   role?: "admin" | "user";
 }
 
+interface CreateAdminRequest {
+  email: string;
+  password: string;
+  fullName?: string;
+  username?: string;
+}
+
 interface DeleteUserRequest {
   userId: string;
 }
@@ -41,7 +48,7 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Verify the caller is an admin
+    // Verify the caller
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -60,16 +67,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if caller is admin
+    // Check caller roles
     const { data: callerRoles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", caller.id);
 
     const isAdmin = callerRoles?.some((r) => r.role === "admin");
-    if (!isAdmin) {
+    const isMaster = callerRoles?.some((r) => r.role === "master");
+    
+    if (!isAdmin && !isMaster) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin access required" }),
+        JSON.stringify({ error: "Unauthorized: Admin or Master access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -78,7 +87,130 @@ Deno.serve(async (req) => {
     const action = url.searchParams.get("action");
 
     switch (action) {
+      case "create-admin": {
+        // Only masters can create admins
+        if (!isMaster) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized: Master access required" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const body: CreateAdminRequest = await req.json();
+        
+        if (!body.email || !body.password) {
+          return new Response(
+            JSON.stringify({ error: "Email and password are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: body.email,
+          password: body.password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: body.fullName || body.email.split("@")[0],
+            username: body.username || body.email.split("@")[0],
+          },
+        });
+
+        if (createError) {
+          return new Response(
+            JSON.stringify({ error: createError.message }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (newUser.user) {
+          // Set role to admin
+          await supabaseAdmin
+            .from("user_roles")
+            .update({ role: "admin" })
+            .eq("user_id", newUser.user.id);
+
+          // Link admin to master
+          await supabaseAdmin
+            .from("master_admins")
+            .insert({ master_id: caller.id, admin_id: newUser.user.id });
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, user: newUser.user }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "delete-admin": {
+        // Only masters can delete admins
+        if (!isMaster) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized: Master access required" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const body: DeleteUserRequest = await req.json();
+
+        if (!body.userId) {
+          return new Response(
+            JSON.stringify({ error: "User ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (body.userId === caller.id) {
+          return new Response(
+            JSON.stringify({ error: "Cannot delete your own account" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify master owns this admin
+        const { data: masterLink } = await supabaseAdmin
+          .from("master_admins")
+          .select("id")
+          .eq("master_id", caller.id)
+          .eq("admin_id", body.userId)
+          .single();
+
+        if (!masterLink) {
+          return new Response(
+            JSON.stringify({ error: "You can only delete admins linked to your account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Remove master_admins link
+        await supabaseAdmin
+          .from("master_admins")
+          .delete()
+          .eq("master_id", caller.id)
+          .eq("admin_id", body.userId);
+
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(body.userId);
+
+        if (deleteError) {
+          return new Response(
+            JSON.stringify({ error: deleteError.message }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       case "create": {
+        if (!isAdmin && !isMaster) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         const body: CreateUserRequest = await req.json();
         
         if (!body.email || !body.password) {
@@ -106,7 +238,6 @@ Deno.serve(async (req) => {
         }
 
         if (newUser.user) {
-          // If role is admin, update the user_roles table
           if (body.role === "admin") {
             await supabaseAdmin
               .from("user_roles")
@@ -114,7 +245,6 @@ Deno.serve(async (req) => {
               .eq("user_id", newUser.user.id);
           }
 
-          // Link student to the admin who created them (only for non-admin users)
           if (body.role !== "admin") {
             await supabaseAdmin
               .from("admin_students")
@@ -138,7 +268,6 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Prevent self-deletion
         if (body.userId === caller.id) {
           return new Response(
             JSON.stringify({ error: "Cannot delete your own account" }),
@@ -161,7 +290,6 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Remove admin_students link
         await supabaseAdmin
           .from("admin_students")
           .delete()
@@ -221,7 +349,6 @@ Deno.serve(async (req) => {
                   .update({ role: "admin" })
                   .eq("user_id", newUser.user.id);
               } else {
-                // Link student to the admin who created them
                 await supabaseAdmin
                   .from("admin_students")
                   .insert({ admin_id: caller.id, student_id: newUser.user.id });
@@ -247,12 +374,10 @@ Deno.serve(async (req) => {
           );
         }
 
-        // Filter out caller's own ID
         const idsToDelete = body.userIds.filter((id) => id !== caller.id);
         const results: { userId: string; success: boolean; error?: string }[] = [];
 
         for (const userId of idsToDelete) {
-          // Verify admin owns this student
           const { data: link } = await supabaseAdmin
             .from("admin_students")
             .select("id")
@@ -265,7 +390,6 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Remove link
           await supabaseAdmin
             .from("admin_students")
             .delete()
@@ -281,7 +405,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Add skipped self-deletion if applicable
         if (body.userIds.includes(caller.id)) {
           results.push({ userId: caller.id, success: false, error: "Cannot delete your own account" });
         }
@@ -294,7 +417,7 @@ Deno.serve(async (req) => {
 
       default:
         return new Response(
-          JSON.stringify({ error: "Invalid action. Use: create, delete, batch-create, batch-delete" }),
+          JSON.stringify({ error: "Invalid action. Use: create, delete, batch-create, batch-delete, create-admin, delete-admin" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }

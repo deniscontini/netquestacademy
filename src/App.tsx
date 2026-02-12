@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import CoursePage from "./pages/CoursePage";
 import ModulePage from "./pages/ModulePage";
 import Admin from "./pages/Admin";
+import Master from "./pages/Master";
 import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/curso/:courseId" element={<CoursePage />} />
             <Route path="/modulo/:moduleId" element={<ModulePage />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/master" element={<Master />} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />

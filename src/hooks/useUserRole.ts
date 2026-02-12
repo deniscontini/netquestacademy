@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type AppRole = "admin" | "user";
+export type AppRole = "admin" | "user" | "master";
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -19,14 +19,12 @@ export const useUserRole = () => {
 
       if (error) {
         console.error("Error fetching user role:", error);
-        return "user"; // Default to user role
+        return "user";
       }
 
-      // If user has multiple roles, prioritize admin
       const roles = data?.map((r) => r.role) || [];
-      if (roles.includes("admin")) {
-        return "admin";
-      }
+      if (roles.includes("master")) return "master";
+      if (roles.includes("admin")) return "admin";
       return roles[0] || "user";
     },
     enabled: !!user,
@@ -36,7 +34,15 @@ export const useUserRole = () => {
 export const useIsAdmin = () => {
   const { data: role, isLoading } = useUserRole();
   return {
-    isAdmin: role === "admin",
+    isAdmin: role === "admin" || role === "master",
+    isLoading,
+  };
+};
+
+export const useIsMaster = () => {
+  const { data: role, isLoading } = useUserRole();
+  return {
+    isMaster: role === "master",
     isLoading,
   };
 };
