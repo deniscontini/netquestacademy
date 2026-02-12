@@ -61,8 +61,8 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       toast.error("Apenas arquivos PDF são aceitos");
       return;
     }
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("Arquivo deve ter no máximo 50MB");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("Arquivo deve ter no máximo 20MB");
       return;
     }
     setForm((prev) => ({ ...prev, pdfFile: file }));
@@ -80,16 +80,17 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
     }
 
     try {
-      let pdfText: string | undefined;
+      let uploadedPdfUrl: string | undefined;
 
       if (form.pdfFile) {
-        toast.info("Fazendo upload do PDF...");
+        toast.info("📄 Fazendo upload do PDF...");
         const url = await uploadPdfMutation.mutateAsync(form.pdfFile);
         setPdfUrl(url);
-        pdfText = `[PDF enviado: ${form.pdfFile.name}]`;
+        uploadedPdfUrl = url;
+        toast.info("🔍 Processando PDF com IA... Isso pode levar alguns segundos.");
+      } else {
+        toast.info("🔎 Pesquisando melhores fontes e gerando estrutura...");
       }
-
-      toast.info("Gerando estrutura com IA... Isso pode levar alguns segundos.");
 
       const result = await generateMutation.mutateAsync({
         title: form.title,
@@ -97,7 +98,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         syllabus: form.syllabus,
         curriculum: form.curriculum,
         bibliography: form.bibliography,
-        pdfText,
+        pdfUrl: uploadedPdfUrl,
       });
 
       setModules(result.modules);
@@ -274,7 +275,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
               {/* PDF Upload */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Arquivo PDF (opcional, máx. 50MB)</Label>
+                <Label className="text-sm">Arquivo PDF (opcional, máx. 20MB)</Label>
                 {form.pdfFile ? (
                   <div className="flex items-center gap-2 p-2.5 sm:p-3 border rounded-md bg-muted/50">
                     <FileText className="w-4 h-4 text-primary shrink-0" />

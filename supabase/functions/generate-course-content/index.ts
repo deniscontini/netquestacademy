@@ -7,6 +7,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Convert ArrayBuffer to base64 string */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,7 +66,7 @@ serve(async (req) => {
       );
     }
 
-    const { title, description, syllabus, curriculum, bibliography, pdfText } =
+    const { title, description, syllabus, curriculum, bibliography, pdfUrl } =
       await req.json();
 
     if (!title) {
@@ -78,6 +88,36 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
+    }
+
+    // ---- Download and encode PDF if provided ----
+    let pdfBase64: string | null = null;
+    if (pdfUrl) {
+      console.log("Downloading PDF from:", pdfUrl);
+      try {
+        const pdfResponse = await fetch(pdfUrl);
+        if (!pdfResponse.ok) {
+          console.error("Failed to download PDF:", pdfResponse.status);
+          throw new Error("Falha ao baixar o PDF do storage");
+        }
+        const pdfBuffer = await pdfResponse.arrayBuffer();
+        const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
+        if (pdfBuffer.byteLength > MAX_PDF_SIZE) {
+          return new Response(
+            JSON.stringify({ error: "PDF excede o limite de 20MB para processamento" }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+        pdfBase64 = arrayBufferToBase64(pdfBuffer);
+        console.log(`PDF encoded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+      } catch (e) {
+        console.error("PDF processing error:", e);
+        // Continue without PDF if download fails
+        pdfBase64 = null;
+      }
     }
 
     const systemPrompt = `Você é um especialista em design instrucional e criação de cursos EAD profissionais.
@@ -148,8 +188,40 @@ Cada lição deve ter no mínimo 800 palavras de conteúdo rico e estruturado.`;
     if (syllabus) userPrompt += `\n**Ementa:** ${syllabus}`;
     if (curriculum) userPrompt += `\n**Conteúdo Programático:** ${curriculum}`;
     if (bibliography) userPrompt += `\n**Bibliografia:** ${bibliography}`;
-    if (pdfText)
-      userPrompt += `\n\n**Conteúdo extraído do PDF de referência:**\n${pdfText.substring(0, 30000)}`;
+
+    // If PDF is attached, instruct the AI to use its content
+    if (pdfBase64) {
+      userPrompt += `\n\n**IMPORTANTE:** Um documento PDF de referência está anexado a esta mensagem. Use o conteúdo deste documento como base principal para gerar o conteúdo das lições, respeitando a estrutura, exemplos e informações presentes nele. Extraia conceitos, definições, exemplos e exercícios do PDF para enriquecer as lições.`;
+    } else {
+      // No PDF: instruct AI to cite authoritative sources
+      userPrompt += `\n\n**IMPORTANTE — Fontes e Referências:**
+Como não há documento de referência anexado, você DEVE:
+- Basear o conteúdo nas melhores referências acadêmicas e técnicas conhecidas sobre o tema
+- Citar autores, livros e obras de referência relevantes dentro do conteúdo das lições
+- Incluir links para recursos gratuitos e abertos (RFCs, documentação oficial, tutoriais consagrados, artigos acadêmicos)
+- Ao final de cada lição, adicionar uma seção:
+  ### 📚 Referências e Leitura Complementar
+  Com uma lista de fontes reais e verificáveis para aprofundamento`;
+    }
+
+    // Build messages array — multimodal if PDF is available
+    let userMessage: any;
+    if (pdfBase64) {
+      userMessage = {
+        role: "user",
+        content: [
+          { type: "text", text: userPrompt },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:application/pdf;base64,${pdfBase64}`,
+            },
+          },
+        ],
+      };
+    } else {
+      userMessage = { role: "user", content: userPrompt };
+    }
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -163,7 +235,7 @@ Cada lição deve ter no mínimo 800 palavras de conteúdo rico e estruturado.`;
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
+            userMessage,
           ],
           tools: [
             {

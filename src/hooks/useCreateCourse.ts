@@ -48,7 +48,7 @@ export const useGenerateCourseContent = () => {
       syllabus?: string;
       curriculum?: string;
       bibliography?: string;
-      pdfText?: string;
+      pdfUrl?: string;
     }): Promise<{ modules: GeneratedModule[] }> => {
       const { data: result, error } = await supabase.functions.invoke(
         "generate-course-content",
