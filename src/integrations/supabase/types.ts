@@ -76,7 +76,9 @@ export type Database = {
       }
       courses: {
         Row: {
+          bibliography: string | null
           created_at: string
+          curriculum: string | null
           description: string | null
           difficulty: Database["public"]["Enums"]["difficulty_level"]
           icon: string
@@ -84,12 +86,16 @@ export type Database = {
           is_active: boolean
           order_index: number
           owner_id: string
+          pdf_url: string | null
+          syllabus: string | null
           title: string
           updated_at: string
           xp_reward: number
         }
         Insert: {
+          bibliography?: string | null
           created_at?: string
+          curriculum?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"]
           icon?: string
@@ -97,12 +103,16 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           owner_id: string
+          pdf_url?: string | null
+          syllabus?: string | null
           title: string
           updated_at?: string
           xp_reward?: number
         }
         Update: {
+          bibliography?: string | null
           created_at?: string
+          curriculum?: string | null
           description?: string | null
           difficulty?: Database["public"]["Enums"]["difficulty_level"]
           icon?: string
@@ -110,6 +120,8 @@ export type Database = {
           is_active?: boolean
           order_index?: number
           owner_id?: string
+          pdf_url?: string | null
+          syllabus?: string | null
           title?: string
           updated_at?: string
           xp_reward?: number
