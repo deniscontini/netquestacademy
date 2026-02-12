@@ -18,7 +18,6 @@ import {
   Trash2,
   Zap,
   GripVertical,
-  Plus,
   Save,
 } from "lucide-react";
 
@@ -128,26 +127,20 @@ const CourseContentPreview = ({
     );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Summary */}
-      <div className="flex items-center gap-4 flex-wrap text-sm">
-        <Badge variant="outline">
-          {modules.length} módulos
-        </Badge>
-        <Badge variant="outline">
-          {totalLessons} lições
-        </Badge>
-        <Badge variant="outline">
-          {totalLabs} laboratórios
-        </Badge>
+      <div className="flex items-center gap-2 sm:gap-4 flex-wrap text-xs sm:text-sm">
+        <Badge variant="outline">{modules.length} módulos</Badge>
+        <Badge variant="outline">{totalLessons} lições</Badge>
+        <Badge variant="outline">{totalLabs} labs</Badge>
         <Badge variant="xp" className="gap-1">
           <Zap className="w-3 h-3" />
-          {totalXp} XP total
+          {totalXp} XP
         </Badge>
       </div>
 
       {/* Modules */}
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {modules.map((mod, mi) => {
           const key = `mod-${mi}`;
           const isOpen = openModules.includes(key);
@@ -156,41 +149,41 @@ const CourseContentPreview = ({
             <Card key={key} className="border">
               <Collapsible open={isOpen} onOpenChange={() => toggleModule(key)}>
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                  <CardHeader className="cursor-pointer py-2.5 sm:py-3 px-3 sm:px-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <GripVertical className="w-4 h-4 text-muted-foreground hidden sm:block" />
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                         {mi + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-sm font-medium truncate">
+                        <CardTitle className="text-xs sm:text-sm font-medium truncate">
                           {mod.title}
                         </CardTitle>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                           <Badge
                             variant="outline"
-                            className={`text-[10px] ${getDifficultyColor(mod.difficulty)}`}
+                            className={`text-[9px] sm:text-[10px] ${getDifficultyColor(mod.difficulty)}`}
                           >
                             {getDifficultyLabel(mod.difficulty)}
                           </Badge>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[9px] sm:text-[10px] text-muted-foreground">
                             {mod.lessons.length} lições • {mod.labs.length} labs
                           </span>
-                          <Badge variant="xp" className="text-[10px] gap-0.5">
+                          <Badge variant="xp" className="text-[9px] sm:text-[10px] gap-0.5">
                             <Zap className="w-2 h-2" />
                             {mod.xp_reward}
                           </Badge>
                         </div>
                       </div>
                       {isOpen ? (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-4 h-4 shrink-0" />
                       ) : (
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4 shrink-0" />
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-6 w-6 sm:h-7 sm:w-7 shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeModule(mi);
@@ -202,9 +195,9 @@ const CourseContentPreview = ({
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <CardContent className="pt-0 px-4 pb-4 space-y-4">
+                  <CardContent className="pt-0 px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4">
                     {/* Module fields */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <Input
                         value={mod.title}
                         onChange={(e) =>
@@ -243,53 +236,57 @@ const CourseContentPreview = ({
                         {mod.lessons.map((lesson, li) => (
                           <div
                             key={li}
-                            className="border rounded-md p-3 space-y-2"
+                            className="border rounded-md p-2 sm:p-3 space-y-2"
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-mono text-muted-foreground">
-                                {li + 1}.
-                              </span>
-                              <Input
-                                value={lesson.title}
-                                onChange={(e) =>
-                                  updateLesson(mi, li, {
-                                    title: e.target.value,
-                                  })
-                                }
-                                className="text-sm flex-1"
-                                placeholder="Título da lição"
-                              />
-                              <Input
-                                type="number"
-                                value={lesson.duration_minutes}
-                                onChange={(e) =>
-                                  updateLesson(mi, li, {
-                                    duration_minutes:
-                                      parseInt(e.target.value) || 10,
-                                  })
-                                }
-                                className="text-sm w-20"
-                                placeholder="Min"
-                              />
-                              <Input
-                                type="number"
-                                value={lesson.xp_reward}
-                                onChange={(e) =>
-                                  updateLesson(mi, li, {
-                                    xp_reward: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="text-sm w-20"
-                                placeholder="XP"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 shrink-0"
-                                onClick={() => removeLesson(mi, li)}
-                              >
-                                <Trash2 className="w-3 h-3 text-destructive" />
-                              </Button>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                                  {li + 1}.
+                                </span>
+                                <Input
+                                  value={lesson.title}
+                                  onChange={(e) =>
+                                    updateLesson(mi, li, {
+                                      title: e.target.value,
+                                    })
+                                  }
+                                  className="text-sm flex-1"
+                                  placeholder="Título da lição"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  value={lesson.duration_minutes}
+                                  onChange={(e) =>
+                                    updateLesson(mi, li, {
+                                      duration_minutes:
+                                        parseInt(e.target.value) || 10,
+                                    })
+                                  }
+                                  className="text-sm w-16 sm:w-20"
+                                  placeholder="Min"
+                                />
+                                <Input
+                                  type="number"
+                                  value={lesson.xp_reward}
+                                  onChange={(e) =>
+                                    updateLesson(mi, li, {
+                                      xp_reward: parseInt(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="text-sm w-16 sm:w-20"
+                                  placeholder="XP"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0"
+                                  onClick={() => removeLesson(mi, li)}
+                                >
+                                  <Trash2 className="w-3 h-3 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -305,9 +302,9 @@ const CourseContentPreview = ({
                         {mod.labs.map((lab, li) => (
                           <div
                             key={li}
-                            className="border rounded-md p-3 space-y-2"
+                            className="border rounded-md p-2 sm:p-3 space-y-2"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                               <Input
                                 value={lab.title}
                                 onChange={(e) =>
@@ -316,31 +313,33 @@ const CourseContentPreview = ({
                                 className="text-sm flex-1"
                                 placeholder="Título do lab"
                               />
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${getDifficultyColor(lab.difficulty)}`}
-                              >
-                                {getDifficultyLabel(lab.difficulty)}
-                              </Badge>
-                              <Input
-                                type="number"
-                                value={lab.xp_reward}
-                                onChange={(e) =>
-                                  updateLab(mi, li, {
-                                    xp_reward: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="text-sm w-20"
-                                placeholder="XP"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 shrink-0"
-                                onClick={() => removeLab(mi, li)}
-                              >
-                                <Trash2 className="w-3 h-3 text-destructive" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] shrink-0 ${getDifficultyColor(lab.difficulty)}`}
+                                >
+                                  {getDifficultyLabel(lab.difficulty)}
+                                </Badge>
+                                <Input
+                                  type="number"
+                                  value={lab.xp_reward}
+                                  onChange={(e) =>
+                                    updateLab(mi, li, {
+                                      xp_reward: parseInt(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="text-sm w-16 sm:w-20"
+                                  placeholder="XP"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 shrink-0"
+                                  onClick={() => removeLab(mi, li)}
+                                >
+                                  <Trash2 className="w-3 h-3 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}

@@ -80,18 +80,65 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `Você é um especialista em design instrucional e criação de cursos educacionais.
+    const systemPrompt = `Você é um especialista em design instrucional e criação de cursos EAD profissionais.
 Sua tarefa é criar uma estrutura completa de curso com módulos, lições e laboratórios práticos baseado nas informações fornecidas.
 
-Regras:
+Regras gerais:
 - Gere conteúdo em português (pt-BR)
 - Cada módulo deve ter entre 2 e 5 lições e 1 a 3 laboratórios
-- Lições devem ter conteúdo rico em markdown com explicações claras
 - Laboratórios devem ter instruções práticas passo-a-passo com comandos esperados
 - Valores de XP: lição ~50 XP, lab ~100 XP, módulo ~500 XP
 - Dificuldades válidas: "iniciante", "intermediario", "avancado"
 - Distribua a dificuldade progressivamente entre os módulos
-- Gere entre 3 e 8 módulos dependendo da complexidade do conteúdo`;
+- Gere entre 3 e 8 módulos dependendo da complexidade do conteúdo
+
+Regras de conteúdo das lições (MUITO IMPORTANTE):
+O conteúdo de cada lição DEVE ser rico, profissional e envolvente, seguindo boas práticas de EAD.
+Use as seguintes convenções em markdown para elementos dinâmicos:
+
+1. **Caixas de destaque** — use blockquotes com emojis para indicar o tipo:
+   > 💡 **Dica:** texto da dica aqui
+   > ⚠️ **Atenção:** texto de alerta aqui
+   > 📌 **Importante:** texto importante aqui
+   > 🔑 **Conceito-chave:** definição do conceito
+
+2. **Cards de conteúdo (frente/verso)** — use este padrão para flashcards:
+   :::card
+   **Pergunta ou termo na frente**
+   ---
+   Resposta ou explicação no verso do card
+   :::
+
+3. **Painéis com abas** — use este padrão para organizar conteúdo em abas:
+   :::tabs
+   ::tab[Teoria]
+   Conteúdo teórico aqui
+   ::tab[Exemplo Prático]
+   Exemplo de aplicação aqui
+   ::tab[Exercício]
+   Atividade para o aluno aqui
+   :::
+
+4. **Tabelas comparativas** — use tabelas markdown para comparar conceitos lado a lado.
+
+5. **Listas de passos** — use listas numeradas com sub-itens para procedimentos.
+
+6. **Blocos de código** — use blocos de código com linguagem especificada para exemplos técnicos:
+   \`\`\`bash
+   comando aqui
+   \`\`\`
+
+7. **Seção de vídeos recomendados** — ao final de cada lição, inclua links de vídeos do YouTube relevantes em português:
+   ### 🎬 Recursos Multimídia
+   📺 **[Título do Vídeo](URL)** (duração)
+
+8. **Resumo visual** — encerre cada lição com uma seção de resumo usando uma lista com ícones:
+   ### 📋 Resumo da Lição
+   - ✅ Ponto 1 aprendido
+   - ✅ Ponto 2 aprendido
+
+Varie os elementos ao longo das lições para manter o engajamento. Nunca faça lições com apenas texto corrido.
+Cada lição deve ter no mínimo 800 palavras de conteúdo rico e estruturado.`;
 
     let userPrompt = `Crie a estrutura completa do curso com base nas seguintes informações:
 
