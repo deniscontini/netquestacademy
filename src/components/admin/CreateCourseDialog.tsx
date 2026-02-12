@@ -82,12 +82,10 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
     try {
       let pdfText: string | undefined;
 
-      // If PDF, upload first then extract text via simple read
       if (form.pdfFile) {
         toast.info("Fazendo upload do PDF...");
         const url = await uploadPdfMutation.mutateAsync(form.pdfFile);
         setPdfUrl(url);
-        // For now we pass the PDF info to AI as context - Gemini handles text
         pdfText = `[PDF enviado: ${form.pdfFile.name}]`;
       }
 
@@ -150,24 +148,24 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] flex flex-col overflow-hidden p-4 sm:p-6">
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="text-base sm:text-lg">
             {step === "form" ? "Criar Novo Curso" : "Revisar Estrutura do Curso"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             {step === "form"
               ? "Preencha as informações e use a IA para gerar a estrutura do curso."
               : "Revise e edite a estrutura gerada pela IA antes de salvar."}
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 pr-4">
+        <ScrollArea className="flex-1 min-h-0 pr-2 sm:pr-4">
           {step === "form" ? (
-            <div className="space-y-4 pb-4">
+            <div className="space-y-3 sm:space-y-4 pb-4">
               {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Título do Curso *</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-sm">Título do Curso *</Label>
                 <Input
                   id="title"
                   value={form.title}
@@ -180,8 +178,8 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-sm">Descrição</Label>
                 <Textarea
                   id="description"
                   value={form.description}
@@ -194,8 +192,8 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               </div>
 
               {/* Syllabus */}
-              <div className="space-y-2">
-                <Label htmlFor="syllabus">Ementa</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="syllabus" className="text-sm">Ementa</Label>
                 <Textarea
                   id="syllabus"
                   value={form.syllabus}
@@ -204,13 +202,13 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                   }
                   placeholder="Descreva a ementa do curso..."
                   maxLength={5000}
-                  className="min-h-[80px]"
+                  className="min-h-[70px]"
                 />
               </div>
 
               {/* Curriculum */}
-              <div className="space-y-2">
-                <Label htmlFor="curriculum">Conteúdo Programático</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="curriculum" className="text-sm">Conteúdo Programático</Label>
                 <Textarea
                   id="curriculum"
                   value={form.curriculum}
@@ -219,13 +217,13 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                   }
                   placeholder="Descreva o conteúdo programático..."
                   maxLength={5000}
-                  className="min-h-[80px]"
+                  className="min-h-[70px]"
                 />
               </div>
 
               {/* Bibliography */}
-              <div className="space-y-2">
-                <Label htmlFor="bibliography">Bibliografia</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="bibliography" className="text-sm">Bibliografia</Label>
                 <Textarea
                   id="bibliography"
                   value={form.bibliography}
@@ -239,9 +237,9 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               </div>
 
               {/* Difficulty & XP */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Dificuldade</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Dificuldade</Label>
                   <Select
                     value={form.difficulty}
                     onValueChange={(v: any) =>
@@ -258,8 +256,8 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="xp">XP do Curso</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="xp" className="text-sm">XP do Curso</Label>
                   <Input
                     id="xp"
                     type="number"
@@ -275,21 +273,21 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               </div>
 
               {/* PDF Upload */}
-              <div className="space-y-2">
-                <Label>Arquivo PDF (opcional, máx. 50MB)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Arquivo PDF (opcional, máx. 50MB)</Label>
                 {form.pdfFile ? (
-                  <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-sm flex-1 truncate">
+                  <div className="flex items-center gap-2 p-2.5 sm:p-3 border rounded-md bg-muted/50">
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-xs sm:text-sm flex-1 truncate">
                       {form.pdfFile.name}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">
                       {(form.pdfFile.size / 1024 / 1024).toFixed(1)} MB
                     </span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-7 w-7 shrink-0"
                       onClick={removePdf}
                     >
                       <X className="w-3 h-3" />
@@ -297,11 +295,11 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                   </div>
                 ) : (
                   <div
-                    className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    className="border-2 border-dashed rounded-md p-4 sm:p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
+                    <Upload className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       Clique ou arraste um PDF aqui
                     </p>
                   </div>
