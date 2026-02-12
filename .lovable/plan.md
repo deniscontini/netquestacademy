@@ -1,165 +1,120 @@
+# Criacao de Cursos pelo Admin com IA Generativa
+
+## Visao Geral
+
+Transformar a aba "Conteudo" do painel administrativo de somente-leitura para um sistema completo de criacao e gerenciamento de cursos. O admin podera criar cursos informando dados basicos e, opcionalmente, fazer upload de um PDF para que a IA analise e sugira modulos, licoes e laboratorios automaticamente, mantendo a gamificacao (XP) integrada.
+
+---
+
+## Fluxo do Usuario
+
+1. Admin acessa aba "Conteudo" no painel administrativo
+2. Clica em "Criar Novo Curso"
+3. Preenche formulario com: Titulo, Descricao, Conteudo Programatico, Ementa, Bibliografia, Dificuldade
+4. (Opcional) Faz upload de 1 arquivo PDF (ate 50MB)
+5. Clica em "Gerar com IA" -- a IA analisa todos os inputs e o PDF para recomendar modulos, licoes e labs. O usuário deverá usar I.A. gratuitas do mercado nesta primeira versão. Se necessário, deixar o usuário escolher entre diferentes tipos e motores de I.A. gratuitos disponíveis no mercado para poder gerar o conteúdo e a estrutura do curso.
+6. Admin visualiza a estrutura sugerida, podendo editar/remover/adicionar itens
+7. Ao confirmar, o curso e todo o conteudo sao salvos no banco com `owner_id` do admin
+8. Os cursos criados aparecem na listagem existente com toda a gamificacao (XP por licao, lab, modulo e curso)
+
+---
+
+## Etapas de Implementacao
+
+### 1. Banco de Dados -- Adicionar campos ao curso e criar storage
+
+- Adicionar colunas na tabela `courses`: `syllabus` (text), `curriculum` (text), `bibliography` (text)
+- Criar bucket de storage `course-files` (publico para leitura) para armazenar os PDFs enviados pelos admins
+- Adicionar coluna `pdf_url` (text, nullable) na tabela `courses` para referenciar o PDF no storage
+- Criar policies de storage para que admins possam fazer upload/delete no bucket
+
+### 2. Edge Function -- `generate-course-content`
+
+- Nova edge function que recebe: titulo, ementa, conteudo programatico, bibliografia e, opcionalmente, o texto extraido do PDF
+- Usa Lovable AI (modelo `google/gemini-3-flash-preview`) para gerar uma estrutura completa:
+  - Modulos (titulo, descricao, dificuldade, XP)
+  - Licoes por modulo (titulo, conteudo markdown, duracao, XP)
+  - Laboratorios por modulo (titulo, descricao, instrucoes, comandos esperados, dicas, dificuldade, XP)
+- Retorna a estrutura em JSON via tool calling (structured output)
+- Trata erros 429/402 do gateway de IA
+
+### 3. Edge Function -- `parse-pdf`
+
+- Nova edge function que recebe o PDF via URL do storage
+- Faz o download do arquivo e extrai o texto (usando a API de texto do PDF ou bibliotecas Deno disponiveis)
+- Retorna o texto extraido para ser enviado junto ao prompt da IA
+- Alternativa: enviar o PDF diretamente ao modelo Gemini como input multimodal (Gemini suporta PDFs nativamente), eliminando a necessidade de parsing separado
+
+### 4. Frontend -- Componente de Criacao de Curso
+
+- `**CreateCourseDialog.tsx**`: Dialog/modal com formulario completo:
+  - Campos: Titulo, Descricao, Conteudo Programatico (textarea), Ementa (textarea), Bibliografia (textarea), Dificuldade (select)
+  - Area de upload de PDF (drag-and-drop, limite 50MB, apenas 1 arquivo)
+  - Botao "Gerar Estrutura com IA" que chama a edge function
+  - Validacao com zod
+- `**CourseContentPreview.tsx**`: Componente para visualizar/editar a estrutura gerada pela IA antes de salvar:
+  - Arvore editavel de modulos > licoes > labs
+  - Possibilidade de remover, reordenar e editar titulo/conteudo de cada item
+  - Indicadores de XP por item
+  - Botao "Salvar Curso" que persiste tudo no banco
+
+### 5. Frontend -- Hook `useCreateCourse`
+
+- Hook com mutation para:
+  - Upload do PDF ao storage
+  - Chamada a edge function de geracao de conteudo
+  - Insercao em cascata: curso -> modulos -> licoes -> labs -> quiz_questions
+  - Cada insert usa `owner_id = auth.uid()` para respeitar multi-tenancy
+- Hook `useUpdateCourse` para edicao de cursos existentes
+- Hook `useDeleteCourse` para remocao
+
+### 6. Atualizacao do `AdminContent.tsx`
+
+- Adicionar botao "Criar Novo Curso" no header do card
+- Adicionar acoes por curso na listagem: Editar, Excluir
+- Integrar os novos dialogs de criacao/edicao
+
+---
+
+## Detalhes Tecnicos
+
+### Modelo de IA e Prompt
+
+- Modelo: `google/gemini-3-flash-preview` (rapido e capaz)
+- O prompt do sistema instruira a IA a gerar conteudo educacional estruturado em portugues (pt-BR)
+- Usara tool calling para garantir output JSON estruturado com o schema exato necessario
+- O PDF sera enviado como contexto adicional (texto extraido ou multimodal)
+
+### Limites e Validacoes
+
+- PDF: maximo 50MB, apenas 1 por vez, tipos aceitos: `application/pdf`
+- Campos de texto: limites de caracteres validados com zod (titulo: 200, ementa/curriculo/bibliografia: 5000 cada)
+- O conteudo gerado pela IA e sempre editavel antes de salvar -- nunca salva automaticamente
+
+### Gamificacao
+
+- A IA gerara sugestoes de XP para cada item baseado na dificuldade e complexidade
+- Os valores de XP seguem os padroes existentes: licao ~50 XP, lab ~100 XP, modulo ~500 XP, curso ~1000 XP
+- O admin pode ajustar os valores antes de salvar
+
+### Seguranca
+
+- Upload de PDF so permitido para admins autenticados (via RLS no storage)
+- Edge functions validam role do caller antes de processar
+- Todo conteudo criado recebe `owner_id` do admin, garantindo isolamento multi-tenant
+- PDFs sao armazenados em path isolado por admin: `course-files/{admin_id}/{filename}`
+
+### Arquivos a Criar/Editar
 
 
-# Plano: Isolamento Multi-Tenant por Administrador
-
-## Objetivo
-Transformar a plataforma de um modelo "admin vê tudo" para um modelo **multi-tenant**, onde cada administrador gerencia apenas seus proprios alunos, cursos, modulos e laboratorios.
-
-## Conceito Central: `owner_id`
-
-Cada administrador tera um identificador (`user_id` do auth) que sera usado como `owner_id` em todas as tabelas de conteudo e nas associacoes de alunos. Isso garante isolamento logico mesmo com todos os dados na mesma base.
-
-```text
-+------------------+
-|   Administrador   |
-|  (owner_id = X)   |
-+--------+---------+
-         |
-    +----+----+----+----+
-    |         |         |
- Cursos   Modulos   Alunos
- (owner=X) (owner=X) (owner=X)
-    |         |
- Lessons    Labs
- (herdam owner via curso/modulo)
-```
-
-## Mudancas no Banco de Dados
-
-### 1. Adicionar coluna `owner_id` nas tabelas de conteudo
-
-| Tabela | Mudanca |
-|--------|---------|
-| `courses` | + `owner_id UUID NOT NULL` (referencia auth.users) |
-| `modules` | + `owner_id UUID NOT NULL` |
-| `labs` | + `owner_id UUID NOT NULL` |
-| `lessons` | + `owner_id UUID NOT NULL` |
-| `quiz_questions` | + `owner_id UUID NOT NULL` |
-| `achievements` | + `owner_id UUID NOT NULL` |
-
-### 2. Criar tabela de vinculacao aluno-administrador
-
-```text
-admin_students
-  id          UUID PK
-  admin_id    UUID NOT NULL  -- o administrador (owner)
-  student_id  UUID NOT NULL  -- o aluno
-  created_at  TIMESTAMPTZ
-  UNIQUE(admin_id, student_id)
-```
-
-Isso permite que um aluno esteja vinculado a mais de um administrador (caso participe de turmas de admins diferentes).
-
-### 3. Funcao auxiliar `is_owner_or_student`
-
-Uma funcao `SECURITY DEFINER` que verifica se o usuario autenticado e o dono do recurso OU um aluno vinculado ao dono:
-
-```text
-is_owner(user_id, owner_id) -> boolean
-is_student_of_owner(student_id, owner_id) -> boolean
-```
-
-### 4. Atualizar todas as politicas RLS
-
-As politicas mudam de:
-- **Antes**: `has_role(auth.uid(), 'admin')` -> ve tudo
-- **Depois**: `owner_id = auth.uid()` -> admin ve apenas o que criou
-
-Para alunos:
-- **Antes**: `is_active = true` -> ve tudo ativo
-- **Depois**: ve apenas conteudo cujo `owner_id` corresponde a um admin ao qual esta vinculado
-
-### 5. Atualizar views publicas
-
-As views `labs_public`, `profiles_public`, `quiz_questions_public` precisam considerar o `owner_id`.
-
-## Mudancas no Backend (Edge Function)
-
-### `manage-users`
-- Ao criar usuario, associa automaticamente na tabela `admin_students` com o `admin_id` do criador
-- Ao deletar, remove a associacao
-- Admin so pode deletar/gerenciar alunos vinculados a ele
-
-## Mudancas no Frontend
-
-### Hooks afetados
-
-| Hook | Mudanca |
-|------|---------|
-| `useAdminData` | Filtrar por `owner_id = auth.uid()` |
-| `useAdminUsers` | Buscar apenas alunos da tabela `admin_students` |
-| `useCourses` | Filtrar cursos por `owner_id` |
-| `useModules` | Filtrar modulos por `owner_id` |
-| `useLabs` | Filtrar labs por `owner_id` |
-| `useCourseAssignments` | Validar que admin so atribui seus proprios cursos |
-
-### Componentes afetados
-
-| Componente | Mudanca |
-|------------|---------|
-| `AdminOverview` | Estatisticas filtradas pelo admin logado |
-| `AdminUsers` | Mostra apenas alunos vinculados ao admin |
-| `AdminContent` | Mostra apenas cursos/modulos do admin |
-| `AdminProgress` | Progresso apenas dos alunos do admin |
-| `AddUserDialog` | Cria vinculo automatico ao admin |
-| `AssignCoursesDialog` | Lista apenas cursos do admin |
-
-### Experiencia do aluno
-
-O aluno continua vendo apenas o conteudo atribuido a ele (via `user_course_assignments` e `user_module_assignments`), sem nenhuma mudanca na experiencia. A filtragem por `owner_id` e transparente.
-
-## Migracao de dados existentes
-
-Os cursos, modulos e labs ja existentes (15 modulos do curso de Redes) precisarao receber o `owner_id` do admin atual (`ee5d0fc4-9740-4c19-97e1-337bc235e9d1`). Isso sera feito na propria migracao com `UPDATE ... SET owner_id = '...' WHERE owner_id IS NULL`.
-
-## Sequencia de Implementacao
-
-1. **Migracao SQL**: Adicionar `owner_id` + tabela `admin_students` + funcoes auxiliares + politicas RLS
-2. **Edge Function**: Atualizar `manage-users` para vincular alunos ao admin criador
-3. **Hooks**: Atualizar queries para filtrar por `owner_id`
-4. **Componentes Admin**: Atualizar UI para contexto multi-tenant
-5. **Testes**: Verificar isolamento entre admins
-
-## Secao Tecnica
-
-### SQL da migracao (resumo)
-
-```text
--- 1. Tabela admin_students
-CREATE TABLE admin_students (...)
-
--- 2. Adicionar owner_id em courses, modules, labs, lessons, quiz_questions, achievements
-ALTER TABLE courses ADD COLUMN owner_id UUID REFERENCES auth.users(id);
--- (repetir para cada tabela)
-
--- 3. Migrar dados existentes
-UPDATE courses SET owner_id = 'ee5d0fc4-...' WHERE owner_id IS NULL;
-
--- 4. Tornar NOT NULL apos migracao
-ALTER TABLE courses ALTER COLUMN owner_id SET NOT NULL;
-
--- 5. Funcoes SECURITY DEFINER
-CREATE FUNCTION is_admin_of_student(admin_id, student_id) ...
-CREATE FUNCTION get_student_owners(student_id) ...
-
--- 6. Atualizar RLS policies (todas as tabelas de conteudo)
-DROP POLICY "Admins can manage courses" ON courses;
-CREATE POLICY "Admins can manage own courses" ON courses
-  FOR ALL USING (owner_id = auth.uid() AND has_role(auth.uid(), 'admin'));
-
--- 7. Alunos veem conteudo dos admins aos quais estao vinculados
-CREATE POLICY "Students can view assigned content" ON courses
-  FOR SELECT USING (
-    is_active = true AND EXISTS (
-      SELECT 1 FROM admin_students
-      WHERE admin_id = courses.owner_id AND student_id = auth.uid()
-    )
-  );
-```
-
-### Impacto nas funcoes existentes
-
-- `can_access_module`: Precisa considerar `owner_id` e `admin_students`
-- `handle_new_user`: Sem mudanca (cria perfil generico)
-- `award_achievement`: Precisa validar `owner_id`
-
+| Arquivo                                               | Acao                                     |
+| ----------------------------------------------------- | ---------------------------------------- |
+| `supabase/migrations/xxx.sql`                         | Novos campos em courses + bucket storage |
+| `supabase/functions/generate-course-content/index.ts` | Nova edge function IA                    |
+| `src/components/admin/CreateCourseDialog.tsx`         | Novo componente de formulario            |
+| `src/components/admin/CourseContentPreview.tsx`       | Novo componente de preview               |
+| `src/components/admin/EditCourseDialog.tsx`           | Novo componente de edicao                |
+| `src/hooks/useCreateCourse.ts`                        | Novo hook de mutacao                     |
+| `src/components/admin/AdminContent.tsx`               | Atualizar com botoes de acao             |
+| `src/hooks/useCourses.ts`                             | Adicionar campos novos ao tipo Course    |
+| `supabase/config.toml`                                | Registrar nova edge function             |
