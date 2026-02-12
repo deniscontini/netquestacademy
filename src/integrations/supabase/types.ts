@@ -225,6 +225,27 @@ export type Database = {
           },
         ]
       }
+      master_admins: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          master_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          master_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          master_id?: string
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           course_id: string | null
@@ -898,6 +919,10 @@ export type Database = {
       }
       is_admin_of_student: {
         Args: { _admin_id: string; _student_id: string }
+        Returns: boolean
+      }
+      is_master_of_admin: {
+        Args: { _admin_id: string; _master_id: string }
         Returns: boolean
       }
       is_student_of_owner: {
