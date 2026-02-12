@@ -22,6 +22,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          owner_id: string
           requirement_type: string
           requirement_value: number
           xp_reward: number
@@ -33,6 +34,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          owner_id: string
           requirement_type: string
           requirement_value?: number
           xp_reward?: number
@@ -44,9 +46,31 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          owner_id?: string
           requirement_type?: string
           requirement_value?: number
           xp_reward?: number
+        }
+        Relationships: []
+      }
+      admin_students: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          student_id?: string
         }
         Relationships: []
       }
@@ -59,6 +83,7 @@ export type Database = {
           id: string
           is_active: boolean
           order_index: number
+          owner_id: string
           title: string
           updated_at: string
           xp_reward: number
@@ -71,6 +96,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_id: string
           title: string
           updated_at?: string
           xp_reward?: number
@@ -83,6 +109,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_id?: string
           title?: string
           updated_at?: string
           xp_reward?: number
@@ -101,6 +128,7 @@ export type Database = {
           is_active: boolean
           module_id: string
           order_index: number
+          owner_id: string
           title: string
           updated_at: string
           xp_reward: number
@@ -116,6 +144,7 @@ export type Database = {
           is_active?: boolean
           module_id: string
           order_index?: number
+          owner_id: string
           title: string
           updated_at?: string
           xp_reward?: number
@@ -131,6 +160,7 @@ export type Database = {
           is_active?: boolean
           module_id?: string
           order_index?: number
+          owner_id?: string
           title?: string
           updated_at?: string
           xp_reward?: number
@@ -154,6 +184,7 @@ export type Database = {
           is_active: boolean
           module_id: string
           order_index: number
+          owner_id: string
           title: string
           updated_at: string
           xp_reward: number
@@ -166,6 +197,7 @@ export type Database = {
           is_active?: boolean
           module_id: string
           order_index?: number
+          owner_id: string
           title: string
           updated_at?: string
           xp_reward?: number
@@ -178,6 +210,7 @@ export type Database = {
           is_active?: boolean
           module_id?: string
           order_index?: number
+          owner_id?: string
           title?: string
           updated_at?: string
           xp_reward?: number
@@ -202,6 +235,7 @@ export type Database = {
           id: string
           is_active: boolean
           order_index: number
+          owner_id: string
           prerequisite_module_id: string | null
           title: string
           updated_at: string
@@ -216,6 +250,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_id: string
           prerequisite_module_id?: string | null
           title: string
           updated_at?: string
@@ -230,6 +265,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           order_index?: number
+          owner_id?: string
           prerequisite_module_id?: string | null
           title?: string
           updated_at?: string
@@ -302,6 +338,7 @@ export type Database = {
           lesson_id: string
           options: Json
           order_index: number
+          owner_id: string
           question: string
           updated_at: string
           xp_reward: number
@@ -313,6 +350,7 @@ export type Database = {
           lesson_id: string
           options?: Json
           order_index?: number
+          owner_id: string
           question: string
           updated_at?: string
           xp_reward?: number
@@ -324,6 +362,7 @@ export type Database = {
           lesson_id?: string
           options?: Json
           order_index?: number
+          owner_id?: string
           question?: string
           updated_at?: string
           xp_reward?: number
@@ -723,6 +762,7 @@ export type Database = {
           is_active: boolean | null
           module_id: string | null
           order_index: number | null
+          owner_id: string | null
           title: string | null
           updated_at: string | null
           xp_reward: number | null
@@ -737,6 +777,7 @@ export type Database = {
           is_active?: boolean | null
           module_id?: string | null
           order_index?: number | null
+          owner_id?: string | null
           title?: string | null
           updated_at?: string | null
           xp_reward?: number | null
@@ -751,6 +792,7 @@ export type Database = {
           is_active?: boolean | null
           module_id?: string | null
           order_index?: number | null
+          owner_id?: string | null
           title?: string | null
           updated_at?: string | null
           xp_reward?: number | null
@@ -799,6 +841,7 @@ export type Database = {
           lesson_id: string | null
           options: Json | null
           order_index: number | null
+          owner_id: string | null
           question: string | null
           updated_at: string | null
           xp_reward: number | null
@@ -809,6 +852,7 @@ export type Database = {
           lesson_id?: string | null
           options?: never
           order_index?: number | null
+          owner_id?: string | null
           question?: string | null
           updated_at?: string | null
           xp_reward?: number | null
@@ -819,6 +863,7 @@ export type Database = {
           lesson_id?: string | null
           options?: never
           order_index?: number | null
+          owner_id?: string | null
           question?: string | null
           updated_at?: string | null
           xp_reward?: number | null
@@ -849,6 +894,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_admin_of_student: {
+        Args: { _admin_id: string; _student_id: string }
+        Returns: boolean
+      }
+      is_student_of_owner: {
+        Args: { _owner_id: string; _student_id: string }
         Returns: boolean
       }
       sanitize_quiz_options: { Args: { options: Json }; Returns: Json }
