@@ -3,11 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+export interface GeneratedQuizQuestion {
+  question: string;
+  explanation: string;
+  xp_reward: number;
+  options: {
+    id: string;
+    text: string;
+    is_correct: boolean;
+  }[];
+}
+
 export interface GeneratedLesson {
   title: string;
   content: string;
   duration_minutes: number;
   xp_reward: number;
+  quiz_questions?: GeneratedQuizQuestion[];
 }
 
 export interface GeneratedLab {
@@ -25,6 +37,7 @@ export interface GeneratedModule {
   description: string;
   difficulty: "iniciante" | "intermediario" | "avancado";
   xp_reward: number;
+  learning_objectives?: string[];
   lessons: GeneratedLesson[];
   labs: GeneratedLab[];
 }
@@ -38,6 +51,13 @@ export interface CourseFormData {
   difficulty: "iniciante" | "intermediario" | "avancado";
   xp_reward: number;
   pdfFile?: File | null;
+  targetAudience?: string;
+  workloadHours?: string;
+  competencies?: string;
+  pedagogicalStyle?: string;
+  gamificationLevel?: string;
+  communicationTone?: string;
+  contentDensity?: string;
 }
 
 export const useGenerateCourseContent = () => {
@@ -49,6 +69,13 @@ export const useGenerateCourseContent = () => {
       curriculum?: string;
       bibliography?: string;
       pdfUrl?: string;
+      targetAudience?: string;
+      workloadHours?: string;
+      competencies?: string[];
+      pedagogicalStyle?: string;
+      gamificationLevel?: string;
+      communicationTone?: string;
+      contentDensity?: string;
     }): Promise<{ modules: GeneratedModule[] }> => {
       const { data: result, error } = await supabase.functions.invoke(
         "generate-course-content",
@@ -103,7 +130,6 @@ export const useSaveCourse = () => {
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Get max order_index
       const { data: existingCourses } = await supabase
         .from("courses")
         .select("order_index")
@@ -112,7 +138,6 @@ export const useSaveCourse = () => {
 
       const nextOrder = (existingCourses?.[0]?.order_index ?? -1) + 1;
 
-      // Insert course
       const { data: course, error: courseError } = await supabase
         .from("courses")
         .insert({
@@ -132,7 +157,6 @@ export const useSaveCourse = () => {
 
       if (courseError) throw courseError;
 
-      // Insert modules, lessons, labs in cascade
       for (let mi = 0; mi < data.modules.length; mi++) {
         const mod = data.modules[mi];
 
@@ -164,11 +188,40 @@ export const useSaveCourse = () => {
             order_index: li,
           }));
 
-          const { error: lessonsError } = await supabase
+          const { data: insertedLessons, error: lessonsError } = await supabase
             .from("lessons")
-            .insert(lessonsToInsert);
+            .insert(lessonsToInsert)
+            .select("id");
 
           if (lessonsError) throw lessonsError;
+
+          // Quiz questions per lesson
+          if (insertedLessons) {
+            for (let li = 0; li < mod.lessons.length; li++) {
+              const lesson = mod.lessons[li];
+              const lessonId = insertedLessons[li]?.id;
+              if (!lessonId || !lesson.quiz_questions?.length) continue;
+
+              const quizToInsert = lesson.quiz_questions.map((q, qi) => ({
+                question: q.question,
+                explanation: q.explanation,
+                xp_reward: q.xp_reward || 10,
+                options: q.options,
+                lesson_id: lessonId,
+                owner_id: user.id,
+                order_index: qi,
+              }));
+
+              const { error: quizError } = await supabase
+                .from("quiz_questions")
+                .insert(quizToInsert);
+
+              if (quizError) {
+                console.error("Quiz insert error:", quizError);
+                // Don't throw - quizzes are non-critical
+              }
+            }
+          }
         }
 
         // Labs
@@ -212,7 +265,6 @@ export const useDeleteCourse = () => {
 
   return useMutation({
     mutationFn: async (courseId: string) => {
-      // Delete labs, lessons, modules in cascade (modules -> lessons/labs)
       const { data: modules } = await supabase
         .from("modules")
         .select("id")
@@ -220,6 +272,17 @@ export const useDeleteCourse = () => {
 
       if (modules && modules.length > 0) {
         const moduleIds = modules.map((m) => m.id);
+
+        // Delete quiz questions for lessons in these modules
+        const { data: lessons } = await supabase
+          .from("lessons")
+          .select("id")
+          .in("module_id", moduleIds);
+
+        if (lessons && lessons.length > 0) {
+          const lessonIds = lessons.map((l) => l.id);
+          await supabase.from("quiz_questions").delete().in("lesson_id", lessonIds);
+        }
 
         await supabase.from("labs").delete().in("module_id", moduleIds);
         await supabase.from("lessons").delete().in("module_id", moduleIds);
