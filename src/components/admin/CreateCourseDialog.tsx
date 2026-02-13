@@ -25,9 +25,8 @@ import {
   useSaveCourse,
 } from "@/hooks/useCreateCourse";
 import CourseContentPreview from "./CourseContentPreview";
-import { Sparkles, Upload, X, FileText, Loader2 } from "lucide-react";
+import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-
 
 interface CreateCourseDialogProps {
   open: boolean;
@@ -36,6 +35,7 @@ interface CreateCourseDialogProps {
 
 const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => {
   const [step, setStep] = useState<"form" | "preview">("form");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [form, setForm] = useState<CourseFormData>({
     title: "",
     description: "",
@@ -45,6 +45,13 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
     difficulty: "iniciante",
     xp_reward: 1000,
     pdfFile: null,
+    targetAudience: "",
+    workloadHours: "",
+    competencies: "",
+    pedagogicalStyle: "",
+    gamificationLevel: "medio",
+    communicationTone: "profissional",
+    contentDensity: "normal",
   });
   const [modules, setModules] = useState<GeneratedModule[]>([]);
   const [pdfUrl, setPdfUrl] = useState<string>();
@@ -92,6 +99,10 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         toast.info("🔎 Pesquisando melhores fontes e gerando estrutura...");
       }
 
+      const competenciesArray = form.competencies
+        ? form.competencies.split(",").map((c) => c.trim()).filter(Boolean)
+        : undefined;
+
       const result = await generateMutation.mutateAsync({
         title: form.title,
         description: form.description,
@@ -99,11 +110,18 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         curriculum: form.curriculum,
         bibliography: form.bibliography,
         pdfUrl: uploadedPdfUrl,
+        targetAudience: form.targetAudience || undefined,
+        workloadHours: form.workloadHours || undefined,
+        competencies: competenciesArray,
+        pedagogicalStyle: form.pedagogicalStyle || undefined,
+        gamificationLevel: form.gamificationLevel || undefined,
+        communicationTone: form.communicationTone || undefined,
+        contentDensity: form.contentDensity || undefined,
       });
 
       setModules(result.modules);
       setStep("preview");
-      toast.success("Estrutura gerada! Revise antes de salvar.");
+      toast.success("Estrutura gerada com quizzes! Revise antes de salvar.");
     } catch (error: any) {
       toast.error(error.message || "Erro ao gerar conteúdo");
     }
@@ -134,9 +152,17 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       difficulty: "iniciante",
       xp_reward: 1000,
       pdfFile: null,
+      targetAudience: "",
+      workloadHours: "",
+      competencies: "",
+      pedagogicalStyle: "",
+      gamificationLevel: "medio",
+      communicationTone: "profissional",
+      contentDensity: "normal",
     });
     setModules([]);
     setPdfUrl(undefined);
+    setShowAdvanced(false);
   };
 
   const isGenerating = generateMutation.isPending || uploadPdfMutation.isPending;
@@ -156,7 +182,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
             {step === "form"
-              ? "Preencha as informações e use a IA para gerar a estrutura do curso."
+              ? "Preencha as informações e use a IA para gerar a estrutura completa com lições, quizzes e laboratórios."
               : "Revise e edite a estrutura gerada pela IA antes de salvar."}
           </DialogDescription>
         </DialogHeader>
@@ -170,9 +196,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                 <Input
                   id="title"
                   value={form.title}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, title: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                   placeholder="Ex: Fundamentos de Redes de Computadores"
                   maxLength={200}
                 />
@@ -184,11 +208,20 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                 <Textarea
                   id="description"
                   value={form.description}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, description: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                   placeholder="Uma breve descrição do curso..."
                   className="min-h-[60px]"
+                />
+              </div>
+
+              {/* Target Audience */}
+              <div className="space-y-1.5">
+                <Label htmlFor="targetAudience" className="text-sm">Público-Alvo</Label>
+                <Input
+                  id="targetAudience"
+                  value={form.targetAudience}
+                  onChange={(e) => setForm((p) => ({ ...p, targetAudience: e.target.value }))}
+                  placeholder="Ex: Profissionais de TI iniciantes, estudantes de Ciência da Computação"
                 />
               </div>
 
@@ -198,9 +231,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                 <Textarea
                   id="syllabus"
                   value={form.syllabus}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, syllabus: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, syllabus: e.target.value }))}
                   placeholder="Descreva a ementa do curso..."
                   maxLength={5000}
                   className="min-h-[70px]"
@@ -213,9 +244,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                 <Textarea
                   id="curriculum"
                   value={form.curriculum}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, curriculum: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, curriculum: e.target.value }))}
                   placeholder="Descreva o conteúdo programático..."
                   maxLength={5000}
                   className="min-h-[70px]"
@@ -228,9 +257,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                 <Textarea
                   id="bibliography"
                   value={form.bibliography}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, bibliography: e.target.value }))
-                  }
+                  onChange={(e) => setForm((p) => ({ ...p, bibliography: e.target.value }))}
                   placeholder="Referências bibliográficas..."
                   maxLength={5000}
                   className="min-h-[60px]"
@@ -243,9 +270,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                   <Label className="text-sm">Dificuldade</Label>
                   <Select
                     value={form.difficulty}
-                    onValueChange={(v: any) =>
-                      setForm((p) => ({ ...p, difficulty: v }))
-                    }
+                    onValueChange={(v: any) => setForm((p) => ({ ...p, difficulty: v }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -264,18 +289,120 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                     type="number"
                     value={form.xp_reward}
                     onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        xp_reward: parseInt(e.target.value) || 1000,
-                      }))
+                      setForm((p) => ({ ...p, xp_reward: parseInt(e.target.value) || 1000 }))
                     }
                   />
                 </div>
               </div>
 
+              {/* Advanced Settings Toggle */}
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-between text-sm text-muted-foreground"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+              >
+                <span>⚙️ Configurações Avançadas de IA</span>
+                {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+
+              {showAdvanced && (
+                <div className="space-y-3 border rounded-lg p-3 bg-muted/30">
+                  {/* Workload */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="workloadHours" className="text-sm">Carga Horária Estimada (horas)</Label>
+                    <Input
+                      id="workloadHours"
+                      type="number"
+                      value={form.workloadHours}
+                      onChange={(e) => setForm((p) => ({ ...p, workloadHours: e.target.value }))}
+                      placeholder="Ex: 40"
+                    />
+                  </div>
+
+                  {/* Competencies */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="competencies" className="text-sm">Competências (separadas por vírgula)</Label>
+                    <Input
+                      id="competencies"
+                      value={form.competencies}
+                      onChange={(e) => setForm((p) => ({ ...p, competencies: e.target.value }))}
+                      placeholder="Ex: Análise de protocolos, Troubleshooting de redes, Configuração de switches"
+                    />
+                  </div>
+
+                  {/* Pedagogical Style */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pedagogicalStyle" className="text-sm">Estilo Pedagógico</Label>
+                    <Input
+                      id="pedagogicalStyle"
+                      value={form.pedagogicalStyle}
+                      onChange={(e) => setForm((p) => ({ ...p, pedagogicalStyle: e.target.value }))}
+                      placeholder="Ex: Baseado em problemas, Aprendizagem por projetos"
+                    />
+                  </div>
+
+                  {/* Communication Tone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Tom de Comunicação</Label>
+                      <Select
+                        value={form.communicationTone}
+                        onValueChange={(v) => setForm((p) => ({ ...p, communicationTone: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="profissional">Profissional</SelectItem>
+                          <SelectItem value="informal">Informal / Próximo</SelectItem>
+                          <SelectItem value="academico">Acadêmico / Formal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Gamification Level */}
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Nível de Gamificação</Label>
+                      <Select
+                        value={form.gamificationLevel}
+                        onValueChange={(v) => setForm((p) => ({ ...p, gamificationLevel: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="baixo">Baixo</SelectItem>
+                          <SelectItem value="medio">Médio</SelectItem>
+                          <SelectItem value="alto">Alto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Content Density */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Densidade de Conteúdo</Label>
+                    <Select
+                      value={form.contentDensity}
+                      onValueChange={(v) => setForm((p) => ({ ...p, contentDensity: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="resumido">Resumido / Objetivo</SelectItem>
+                        <SelectItem value="normal">Normal / Equilibrado</SelectItem>
+                        <SelectItem value="detalhado">Detalhado / Aprofundado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               {/* PDF Upload */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Arquivo PDF (opcional, máx. 20MB)</Label>
+                <Label className="text-sm">Arquivo PDF de Referência (opcional, máx. 20MB)</Label>
                 {form.pdfFile ? (
                   <div className="flex items-center gap-2 p-2.5 sm:p-3 border rounded-md bg-muted/50">
                     <FileText className="w-4 h-4 text-primary shrink-0" />
@@ -327,7 +454,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                   <Sparkles className="w-4 h-4" />
                 )}
                 {isGenerating
-                  ? "Gerando estrutura..."
+                  ? "Gerando estrutura com quizzes..."
                   : "Gerar Estrutura com IA"}
               </Button>
             </div>
