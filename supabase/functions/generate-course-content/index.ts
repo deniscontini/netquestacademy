@@ -63,6 +63,35 @@ serve(async (req) => {
       );
     }
 
+    // Check free plan course limit
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: subscription } = await supabaseAdminClient
+      .from("user_subscriptions")
+      .select("plan")
+      .eq("user_id", user.id)
+      .single();
+
+    const userPlan = subscription?.plan || "gratuito";
+
+    if (userPlan === "gratuito") {
+      const { count: courseCount } = await supabaseAdminClient
+        .from("courses")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user.id);
+
+      if ((courseCount || 0) >= 1) {
+        return new Response(
+          JSON.stringify({ error: "Limite de 1 curso atingido no plano Gratuito. Faça upgrade para criar mais cursos." }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
     const {
       title,
       description,

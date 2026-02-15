@@ -23,7 +23,9 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateUser } from "@/hooks/useUserManagement";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, AlertTriangle } from "lucide-react";
+import { usePlanLimits, useAdminStudentCount } from "@/hooks/usePlanLimits";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const createUserSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -43,6 +45,10 @@ interface AddUserDialogProps {
 const AddUserDialog = ({ open, onOpenChange }: AddUserDialogProps) => {
   const createUser = useCreateUser();
   const { toast } = useToast();
+  const { limits, plan } = usePlanLimits();
+  const { data: studentCount = 0 } = useAdminStudentCount();
+
+  const hasReachedStudentLimit = plan === "gratuito" && studentCount >= limits.maxStudentsPerCourse;
 
   const form = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
@@ -91,6 +97,15 @@ const AddUserDialog = ({ open, onOpenChange }: AddUserDialogProps) => {
             Crie um novo usuário na plataforma
           </DialogDescription>
         </DialogHeader>
+
+        {hasReachedStudentLimit && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Você atingiu o limite de {limits.maxStudentsPerCourse} alunos do plano {limits.planName}. Faça upgrade para adicionar mais alunos.
+                </AlertDescription>
+              </Alert>
+            )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -176,7 +191,7 @@ const AddUserDialog = ({ open, onOpenChange }: AddUserDialogProps) => {
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createUser.isPending}>
+              <Button type="submit" disabled={createUser.isPending || hasReachedStudentLimit}>
                 {createUser.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Criar Usuário
               </Button>
