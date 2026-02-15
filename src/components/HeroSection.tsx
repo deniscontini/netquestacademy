@@ -7,11 +7,7 @@ const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <img
-          src={heroImage}
-          alt="Network visualization"
-          className="w-full h-full object-cover opacity-40" />
-
+        <img src={heroImage} alt="Network visualization" className="w-full h-full object-cover opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
       </div>
 
@@ -22,7 +18,7 @@ const HeroSection = () => {
       <div className="absolute top-1/4 left-10 animate-float opacity-20">
         <Wifi className="w-16 h-16 text-primary" />
       </div>
-      <div className="absolute bottom-1/3 right-16 animate-float opacity-20" style={{ animationDelay: '2s' }}>
+      <div className="absolute bottom-1/3 right-16 animate-float opacity-20" style={{ animationDelay: "2s" }}>
         <Network className="w-20 h-20 text-accent" />
       </div>
 
@@ -36,15 +32,15 @@ const HeroSection = () => {
 
           {/* Main Title */}
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-            Domine{" "}
-            <span className="gradient-text">Diversos</span>
+            Ensine <span className="gradient-text">Redes de</span>
             <br />
-            <span className="gradient-text">temas de T.I.</span>
+            <span className="gradient-text">Computadores</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">Plataforma gamificada com laboratórios práticos. Ensine desde o básico até o avançado, enquanto seus alunos ganham XP, badges e sobem no ranking.
-
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Plataforma gamificada com laboratórios práticos. Aprenda desde os fundamentos até diagnósticos avançados
+            enquanto ganha XP, badges e sobe no ranking.
           </p>
 
           {/* CTA Buttons */}
@@ -85,8 +81,8 @@ const HeroSection = () => {
 
       {/* Bottom Gradient Fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
-    </section>);
-
+    </section>
+  );
 };
 
 export default HeroSection;
