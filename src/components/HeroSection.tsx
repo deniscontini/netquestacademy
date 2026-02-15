@@ -31,7 +31,7 @@ const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-secondary/50 border border-primary/20 rounded-full px-4 py-2 text-sm text-muted-foreground backdrop-blur-sm">
             <Zap className="w-4 h-4 text-primary" />
-            <span>Aprenda redes de forma gamificada</span>
+            <span>Ensine de forma gamificada</span>
           </div>
 
           {/* Main Title */}
