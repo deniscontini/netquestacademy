@@ -37,9 +37,9 @@ const HeroSection = () => {
           {/* Main Title */}
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
             Domine{" "}
-            <span className="gradient-text">Redes de</span>
+            <span className="gradient-text">Diversos</span>
             <br />
-            <span className="gradient-text">Computadores</span>
+            <span className="gradient-text">temas de T.I.</span>
           </h1>
 
           {/* Subtitle */}
