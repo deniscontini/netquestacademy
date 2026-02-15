@@ -4,21 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 const badges = [
-  { icon: "🔌", name: "First Connect", description: "Complete seu primeiro lab" },
-  { icon: "📡", name: "Signal Master", description: "Domine transmissão wireless" },
-  { icon: "🔧", name: "Troubleshooter", description: "Resolva 10 problemas de rede" },
-  { icon: "🏆", name: "Network Pro", description: "Complete todos os módulos" },
-  { icon: "⚡", name: "Speed Demon", description: "Complete um lab em menos de 5min" },
-  { icon: "🛡️", name: "Security First", description: "Configure firewall corretamente" },
-];
+{ icon: "🔌", name: "First Connect", description: "Complete seu primeiro lab" },
+{ icon: "📡", name: "Signal Master", description: "Domine transmissão wireless" },
+{ icon: "🔧", name: "Troubleshooter", description: "Resolva 10 problemas de rede" },
+{ icon: "🏆", name: "Network Pro", description: "Complete todos os módulos" },
+{ icon: "⚡", name: "Speed Demon", description: "Complete um lab em menos de 5min" },
+{ icon: "🛡️", name: "Security First", description: "Configure firewall corretamente" }];
+
 
 const leaderboard = [
-  { rank: 1, name: "NetMaster_BR", xp: 15420, level: 25, badge: "diamond" },
-  { rank: 2, name: "CyberTech99", xp: 14200, level: 23, badge: "platinum" },
-  { rank: 3, name: "RouterKing", xp: 13800, level: 22, badge: "gold" },
-  { rank: 4, name: "PacketHunter", xp: 12500, level: 20, badge: "gold" },
-  { rank: 5, name: "WireShark_Pro", xp: 11900, level: 19, badge: "silver" },
-];
+{ rank: 1, name: "NetMaster_BR", xp: 15420, level: 25, badge: "diamond" },
+{ rank: 2, name: "CyberTech99", xp: 14200, level: 23, badge: "platinum" },
+{ rank: 3, name: "RouterKing", xp: 13800, level: 22, badge: "gold" },
+{ rank: 4, name: "PacketHunter", xp: 12500, level: 20, badge: "gold" },
+{ rank: 5, name: "WireShark_Pro", xp: 11900, level: 19, badge: "silver" }];
+
 
 const getRankBadge = (rank: number) => {
   switch (rank) {
@@ -45,8 +45,8 @@ const GamificationSection = () => {
           <Badge variant="new" className="mb-4">
             <Star className="w-3 h-3 mr-1" /> Sistema de Gamificação
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Aprenda <span className="gradient-text-accent">Jogando</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ensine através de jogos e desafios
+            <span className="gradient-text-accent">Jogando</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Ganhe XP, desbloqueie badges exclusivas e dispute o topo do ranking global. Cada desafio superado te aproxima do título de Network Master.
@@ -111,15 +111,15 @@ const GamificationSection = () => {
               </div>
               
               <div className="grid grid-cols-3 gap-4">
-                {badges.map((badge, index) => (
-                  <div 
-                    key={index}
-                    className="flex flex-col items-center text-center p-3 rounded-lg bg-secondary/50 border border-border/50 opacity-50 hover:opacity-70 transition-opacity"
-                  >
+                {badges.map((badge, index) =>
+                <div
+                  key={index}
+                  className="flex flex-col items-center text-center p-3 rounded-lg bg-secondary/50 border border-border/50 opacity-50 hover:opacity-70 transition-opacity">
+
                     <span className="text-2xl mb-2 grayscale">{badge.icon}</span>
                     <span className="text-xs font-medium line-clamp-1">{badge.name}</span>
                   </div>
-                ))}
+                )}
               </div>
             </Card>
           </div>
@@ -135,15 +135,15 @@ const GamificationSection = () => {
             </div>
 
             <div className="space-y-3">
-              {leaderboard.map((player) => (
-                <div 
-                  key={player.rank}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
-                    player.rank <= 3 
-                      ? 'bg-gradient-to-r from-secondary to-transparent border border-border/30' 
-                      : 'bg-secondary/30 hover:bg-secondary/50'
-                  }`}
-                >
+              {leaderboard.map((player) =>
+              <div
+                key={player.rank}
+                className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
+                player.rank <= 3 ?
+                'bg-gradient-to-r from-secondary to-transparent border border-border/30' :
+                'bg-secondary/30 hover:bg-secondary/50'}`
+                }>
+
                   <div className="text-2xl w-10 text-center">
                     {getRankBadge(player.rank)}
                   </div>
@@ -161,7 +161,7 @@ const GamificationSection = () => {
                     {player.xp.toLocaleString()} XP
                   </Badge>
                 </div>
-              ))}
+              )}
             </div>
 
             <div className="mt-6 pt-6 border-t border-border">
@@ -182,8 +182,8 @@ const GamificationSection = () => {
           </Card>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default GamificationSection;
