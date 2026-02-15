@@ -25,8 +25,10 @@ import {
   useSaveCourse,
 } from "@/hooks/useCreateCourse";
 import CourseContentPreview from "./CourseContentPreview";
-import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { usePlanLimits, useAdminCourseCount } from "@/hooks/usePlanLimits";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateCourseDialogProps {
   open: boolean;
@@ -60,6 +62,11 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
   const generateMutation = useGenerateCourseContent();
   const uploadPdfMutation = useUploadPdf();
   const saveMutation = useSaveCourse();
+  const { limits, plan } = usePlanLimits();
+  const { data: courseCount = 0 } = useAdminCourseCount();
+
+  const hasReachedCourseLimit = plan === "gratuito" && courseCount >= limits.maxCourses;
+  const maxPdfSize = limits.maxPdfSizeMB * 1024 * 1024;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,8 +75,8 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       toast.error("Apenas arquivos PDF são aceitos");
       return;
     }
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error("Arquivo deve ter no máximo 20MB");
+    if (file.size > maxPdfSize) {
+      toast.error(`Arquivo deve ter no máximo ${limits.maxPdfSizeMB}MB (plano ${limits.planName})`);
       return;
     }
     setForm((prev) => ({ ...prev, pdfFile: file }));
@@ -190,6 +197,14 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2 sm:pr-3">
           {step === "form" ? (
             <div className="space-y-3 sm:space-y-4 pb-4">
+              {hasReachedCourseLimit && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Você atingiu o limite de {limits.maxCourses} curso(s) do plano {limits.planName}. Faça upgrade para criar mais cursos.
+                  </AlertDescription>
+                </Alert>
+              )}
               {/* Title */}
               <div className="space-y-1.5">
                 <Label htmlFor="title" className="text-sm">Título do Curso *</Label>
@@ -402,7 +417,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
               {/* PDF Upload */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Arquivo PDF de Referência (opcional, máx. 20MB)</Label>
+                <Label className="text-sm">Arquivo PDF de Referência (opcional, máx. {limits.maxPdfSizeMB}MB)</Label>
                 {form.pdfFile ? (
                   <div className="flex items-center gap-2 p-2.5 sm:p-3 border rounded-md bg-muted/50">
                     <FileText className="w-4 h-4 text-primary shrink-0" />
@@ -444,7 +459,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
               {/* Generate Button */}
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating || !form.title.trim()}
+                disabled={isGenerating || !form.title.trim() || hasReachedCourseLimit}
                 className="w-full gap-2"
                 size="lg"
               >

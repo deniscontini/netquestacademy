@@ -220,6 +220,31 @@ Deno.serve(async (req) => {
           );
         }
 
+        // Check free plan student limit (server-side enforcement)
+        if (body.role !== "admin") {
+          const { data: subscription } = await supabaseAdmin
+            .from("user_subscriptions")
+            .select("plan")
+            .eq("user_id", caller.id)
+            .single();
+
+          const plan = subscription?.plan || "gratuito";
+
+          if (plan === "gratuito") {
+            const { count: studentCount } = await supabaseAdmin
+              .from("admin_students")
+              .select("id", { count: "exact", head: true })
+              .eq("admin_id", caller.id);
+
+            if ((studentCount || 0) >= 5) {
+              return new Response(
+                JSON.stringify({ error: "Limite de 5 alunos atingido no plano Gratuito. Faça upgrade para adicionar mais alunos." }),
+                { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            }
+          }
+        }
+
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: body.email,
           password: body.password,
@@ -323,9 +348,33 @@ Deno.serve(async (req) => {
 
         const results: { email: string; success: boolean; error?: string }[] = [];
 
+        // Check free plan student limit for batch create
+        const { data: callerSub } = await supabaseAdmin
+          .from("user_subscriptions")
+          .select("plan")
+          .eq("user_id", caller.id)
+          .single();
+
+        const callerPlan = callerSub?.plan || "gratuito";
+        let currentStudentCount = 0;
+
+        if (callerPlan === "gratuito") {
+          const { count } = await supabaseAdmin
+            .from("admin_students")
+            .select("id", { count: "exact", head: true })
+            .eq("admin_id", caller.id);
+          currentStudentCount = count || 0;
+        }
+
         for (const user of body.users) {
           if (!user.email || !user.password) {
             results.push({ email: user.email || "unknown", success: false, error: "Email and password required" });
+            continue;
+          }
+
+          // Check student limit for free plan
+          if (callerPlan === "gratuito" && user.role !== "admin" && currentStudentCount >= 5) {
+            results.push({ email: user.email, success: false, error: "Limite de 5 alunos do plano Gratuito atingido" });
             continue;
           }
 
@@ -352,6 +401,7 @@ Deno.serve(async (req) => {
                 await supabaseAdmin
                   .from("admin_students")
                   .insert({ admin_id: caller.id, student_id: newUser.user.id });
+                currentStudentCount++;
               }
             }
             results.push({ email: user.email, success: true });
