@@ -8,7 +8,7 @@ const plans = [
     name: "Gratuito",
     price: "R$ 0",
     period: "/mês",
-    description: "Perfeito para começar sua jornada em redes",
+    description: "Perfeito para começar no ensino gamificado!",
     popular: false,
     features: [
       "1 curso completo",
@@ -26,7 +26,7 @@ const plans = [
     name: "Pro",
     price: "R$ 14,90",
     period: "/mês",
-    description: "Para profissionais com poucas turmas e com todos os recursos liberados",
+    description: "Acesso completo para dominar redes",
     popular: true,
     features: [
       "Todos os 8 módulos completos",
