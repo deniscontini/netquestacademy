@@ -8,7 +8,7 @@ const plans = [
     name: "Gratuito",
     price: "R$ 0",
     period: "/mês",
-    description: "Perfeito para começar no ensino gamificado!",
+    description: "Perfeito para começar sua jornada em redes",
     popular: false,
     features: [
       "1 curso completo",
@@ -16,7 +16,7 @@ const plans = [
       "Upload de PDF até 5MB",
       "Todos os recursos inclusos",
       "Sistema de XP e badges",
-      "Sem compartilhamento de turmas",
+      "Sem compartilhamento de alunos e turmas",
     ],
 
     cta: "Começar Grátis",
