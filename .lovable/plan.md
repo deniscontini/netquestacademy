@@ -1,87 +1,65 @@
-# Melhorar Geração de Conteúdo com IA: Leitura de PDF e Fontes Externas
 
-## Problema Atual
+# Rebranding: De "NetOps Academy" para Plataforma Genérica de T.I.
 
-1. **PDF nao e lido**: Quando o admin faz upload de um PDF, o sistema envia apenas o texto `[PDF enviado: nome.pdf]` para a IA -- o conteudo real do arquivo nao e processado.
-2. **Sem fontes externas**: Quando nao ha PDF, a IA gera conteudo apenas com base no texto informado pelo admin, sem buscar ou referenciar fontes de qualidade.
+## Objetivo
+Transformar a plataforma de uma ferramenta exclusiva para redes de computadores em uma plataforma SaaS genérica de cursos gamificados para **todas as areas de T.I.** (programacao, ciberseguranca, cloud, DevOps, banco de dados, redes, etc.).
 
-## Solucao
+## Resumo das Mudancas
 
-### 1. Leitura Real do PDF pelo Gemini (Multimodal)
+### 1. Identidade da Marca
+- **Nome**: "NetOps Academy" sera substituido por **"TechOps Academy"** (ou outro nome que prefira)
+- **Icone**: Trocar o icone `Network` por `GraduationCap` ou `Laptop` (mais generico para T.I.)
+- **Tagline/Subtitulo**: Atualizar de "redes de computadores" para "tecnologia da informacao"
 
-O modelo Gemini suporta **input multimodal nativo de PDFs** -- podemos enviar o arquivo diretamente como base64 na requisicao, sem necessidade de uma biblioteca de parsing separada.
+### 2. Arquivos Afetados
 
-**Fluxo atualizado:**
+| Arquivo | Mudanca |
+|---|---|
+| `index.html` | Titulo e meta tags: "NetOps Academy" para "TechOps Academy" |
+| `src/components/Navbar.tsx` | Logo, nome, icone |
+| `src/components/DashboardNavbar.tsx` | Logo, nome, icone |
+| `src/components/Footer.tsx` | Logo, nome, icone, descricao |
+| `src/components/HeroSection.tsx` | Titulo, subtitulo, icones decorativos, stats |
+| `src/components/GamificationSection.tsx` | Badges (remover referencias a rede), nomes do leaderboard |
+| `src/components/LabsSection.tsx` | Descricao, exemplos de labs, terminal preview |
+| `src/components/PricingSection.tsx` | Descricoes dos planos |
+| `src/components/LabTerminal.tsx` | Prompt do terminal ("netops@lab" para "techops@lab") |
+| `src/pages/Auth.tsx` | Logo, nome, descricao de cadastro |
+| `src/pages/Dashboard.tsx` | Nenhuma mudanca textual necessaria (ja e generico) |
 
-- Frontend faz upload do PDF para o storage (ja funciona)
-- Frontend envia a `pdfUrl` para a edge function (em vez de texto placeholder)
-- Edge function faz download do PDF do storage
-- Edge function converte o PDF em base64
-- Edge function envia o PDF como conteudo multimodal (inline_data com mime_type `application/pdf`) junto com o prompt
+### 3. Detalhes por Componente
 
-### 2. Instrucao para Fontes Externas (sem PDF)
+**HeroSection.tsx**
+- Titulo: "Ensine **Redes de Computadores**" para "Ensine **Tecnologia** de forma **Gamificada**"
+- Subtitulo: Remover mencao a "redes", focar em "cursos de T.I. com laboratorios praticos"
+- Icones flutuantes: `Wifi`/`Network` para `Code`/`Laptop` (mais abrangentes)
+- Badge: Manter "Ensine de forma gamificada"
 
-Quando nao houver PDF anexado, o prompt sera enriquecido para instruir a IA a:
+**GamificationSection.tsx**
+- Badges: Atualizar nomes e descricoes para serem genericos de T.I.:
+  - "First Connect" para "First Step" 
+  - "Signal Master" para "Quick Learner"
+  - "Troubleshooter" permanece (generico)
+  - "Network Pro" para "Tech Pro"
+  - "Security First" permanece (generico)
+- Nomes do leaderboard: Trocar nomes como "RouterKing", "WireShark_Pro" por nomes genericos
 
-- Basear o conteudo nas melhores referencias academicas e tecnicas conhecidas sobre o tema
-- Citar fontes, autores e obras de referencia no conteudo das licoes
-- Incluir links para recursos gratuitos e abertos (RFCs, documentacao oficial, tutoriais consagrados)
-- Adicionar uma secao "Referencias e Leitura Complementar" ao final de cada licao
+**LabsSection.tsx**
+- Descricao: "configura redes, resolve problemas" para "pratica comandos, resolve desafios e aplica conceitos"
+- Exemplos de labs: Substituir exemplos de rede por exemplos variados de T.I.
+- Terminal preview: Atualizar prompt e comandos de exemplo para algo generico
 
-### 3. Feedback Visual ao Usuario
+**PricingSection.tsx**
+- Descricoes: Remover "redes" e "redes de computadores", usar "tecnologia" ou "T.I."
 
-Adicionar indicadores de progresso mais claros durante a geracao:
+**Auth.tsx**
+- "Comece a aprender redes de forma gamificada" para "Comece a aprender de forma gamificada"
 
-- "Processando PDF..." (quando ha arquivo)
-- "Pesquisando melhores fontes..." (quando nao ha arquivo)
-- "Gerando estrutura do curso..."
+**LabTerminal.tsx**
+- Prompt: `netops@lab` para `techops@lab`
 
----
+### 4. Secao Tecnica
 
-## Detalhes Tecnicos
+Todas as mudancas sao exclusivamente no frontend (componentes React). Nenhuma alteracao de banco de dados, edge functions ou logica de negocio e necessaria, pois a estrutura ja suporta cursos de qualquer area.
 
-### Edge Function (`generate-course-content`)
-
-**Alteracoes:**
-
-- Novo parametro de entrada: `pdfUrl` (string, URL do storage)
-- Quando `pdfUrl` esta presente:
-  - Faz fetch do PDF do storage
-  - Converte para base64 (ArrayBuffer -> Uint8Array -> base64)
-  - Monta a mensagem com conteudo multimodal para o Gemini:
-    ```
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: [
-        { type: "text", text: userPrompt },
-        { type: "image_url", url: { url: "data:application/pdf;base64,..." } }
-      ]}
-    ]
-    ```
-- Quando nao ha PDF:
-  - Adiciona instrucao extra no prompt pedindo que a IA use seu conhecimento para referenciar as melhores fontes disponiveis
-
-### Frontend (`CreateCourseDialog.tsx`)
-
-- Passa `pdfUrl` em vez de `pdfText` para a edge function
-- Mensagens de progresso mais descritivas
-
-### Hook (`useCreateCourse.ts`)
-
-- Atualiza o tipo do mutation para aceitar `pdfUrl` em vez de `pdfText`
-- Ajusta a chamada para enviar a URL do PDF ao storage
-
-### Arquivos Alterados
-
-
-| Arquivo                                               | Alteracao                                                                                     |
-| ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `supabase/functions/generate-course-content/index.ts` | Download do PDF, conversao base64, envio multimodal ao Gemini; prompt enriquecido para fontes |
-| `src/components/admin/CreateCourseDialog.tsx`         | Enviar pdfUrl, mensagens de progresso                                                         |
-| `src/hooks/useCreateCourse.ts`                        | Ajustar tipo para pdfUrl                                                                      |
-
-
-### Limites
-
-- PDFs muito grandes (>20MB de conteudo efetivo) podem exceder o limite de contexto do Gemini -- o sistema limitara o envio a no maximo 20MB de base64. Por este motivo, limitar o tamanho do arquivo de 50 para 20 MB.
-- O tempo de processamento pode aumentar em 5-15 segundos dependendo do tamanho do PDF
+Os arquivos serao editados com `lov-line-replace` para mudancas cirurgicas nos textos, icones e dados estaticos.
