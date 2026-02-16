@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Network, Mail, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
+import { GraduationCap, Mail, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -132,9 +132,9 @@ const Auth = () => {
         <div className="text-center">
           <div className="inline-flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Network className="w-6 h-6 text-primary-foreground" />
+              <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold">NetOps Academy</span>
+            <span className="text-2xl font-bold">TechOps Academy</span>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ const Auth = () => {
             <CardDescription>
               {isLogin 
                 ? "Entre para continuar sua jornada" 
-                : "Comece a aprender redes de forma gamificada"
+                : "Comece a aprender de forma gamificada"
               }
             </CardDescription>
           </CardHeader>

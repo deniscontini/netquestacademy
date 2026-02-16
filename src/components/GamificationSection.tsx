@@ -4,20 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 const badges = [
-{ icon: "🔌", name: "First Connect", description: "Complete seu primeiro lab" },
-{ icon: "📡", name: "Signal Master", description: "Domine transmissão wireless" },
-{ icon: "🔧", name: "Troubleshooter", description: "Resolva 10 problemas de rede" },
-{ icon: "🏆", name: "Network Pro", description: "Complete todos os módulos" },
+{ icon: "🚀", name: "First Step", description: "Complete seu primeiro lab" },
+{ icon: "📚", name: "Quick Learner", description: "Complete 5 lições seguidas" },
+{ icon: "🔧", name: "Troubleshooter", description: "Resolva 10 desafios práticos" },
+{ icon: "🏆", name: "Tech Pro", description: "Complete todos os módulos" },
 { icon: "⚡", name: "Speed Demon", description: "Complete um lab em menos de 5min" },
-{ icon: "🛡️", name: "Security First", description: "Configure firewall corretamente" }];
+{ icon: "🛡️", name: "Security First", description: "Domine um módulo de segurança" }];
 
 
 const leaderboard = [
-{ rank: 1, name: "NetMaster_BR", xp: 15420, level: 25, badge: "diamond" },
+{ rank: 1, name: "DevMaster_BR", xp: 15420, level: 25, badge: "diamond" },
 { rank: 2, name: "CyberTech99", xp: 14200, level: 23, badge: "platinum" },
-{ rank: 3, name: "RouterKing", xp: 13800, level: 22, badge: "gold" },
-{ rank: 4, name: "PacketHunter", xp: 12500, level: 20, badge: "gold" },
-{ rank: 5, name: "WireShark_Pro", xp: 11900, level: 19, badge: "silver" }];
+{ rank: 3, name: "CloudKing", xp: 13800, level: 22, badge: "gold" },
+{ rank: 4, name: "CodeHunter", xp: 12500, level: 20, badge: "gold" },
+{ rank: 5, name: "DataNinja_Pro", xp: 11900, level: 19, badge: "silver" }];
 
 
 const getRankBadge = (rank: number) => {

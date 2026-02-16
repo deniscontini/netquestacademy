@@ -5,25 +5,25 @@ import { Button } from "@/components/ui/button";
 
 const labExamples = [
   {
-    title: "Configurar Endereço IP",
-    module: "Endereçamento IP",
+    title: "Deploy de Aplicação",
+    module: "DevOps",
     difficulty: "Iniciante",
     xp: 100,
-    description: "Configure o endereço IP 192.168.1.10 com máscara 255.255.255.0 no dispositivo.",
+    description: "Faça o deploy de uma aplicação usando comandos básicos no terminal.",
   },
   {
-    title: "Identificar Topologia",
-    module: "Topologias",
+    title: "Consulta SQL Avançada",
+    module: "Banco de Dados",
     difficulty: "Iniciante", 
     xp: 75,
-    description: "Analise o diagrama e identifique o tipo de topologia utilizada.",
+    description: "Escreva uma consulta SQL com JOIN para combinar dados de duas tabelas.",
   },
   {
-    title: "Troubleshoot Conexão",
+    title: "Troubleshoot de Serviço",
     module: "Diagnósticos",
     difficulty: "Intermediário",
     xp: 200,
-    description: "Use ping e traceroute para identificar onde está o problema de conectividade.",
+    description: "Use comandos de diagnóstico para identificar por que um serviço não está respondendo.",
   },
 ];
 
@@ -40,7 +40,7 @@ const LabsSection = () => {
             Aprenda <span className="gradient-text">Fazendo</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Ambientes simulados interativos onde você configura redes, resolve problemas e aplica os conceitos na prática.
+            Ambientes simulados interativos onde você pratica comandos, resolve desafios e aplica os conceitos na prática.
           </p>
         </div>
 
@@ -55,7 +55,7 @@ const LabsSection = () => {
                   <div className="w-3 h-3 rounded-full bg-[hsl(45_90%_55%/0.6)]" />
                   <div className="w-3 h-3 rounded-full bg-accent/60" />
                 </div>
-                <span className="text-sm text-muted-foreground ml-2 font-mono">netops-lab</span>
+                <span className="text-sm text-muted-foreground ml-2 font-mono">techops-lab</span>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="level">Lab Ativo</Badge>
@@ -69,28 +69,28 @@ const LabsSection = () => {
               <div className="p-6 border-b lg:border-b-0 lg:border-r border-border">
                 <h4 className="font-bold mb-3 flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-primary" />
-                  Missão: Configurar IP
+                  Missão: Deploy da App
                 </h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Configure o endereço IP <code className="text-primary bg-primary/10 px-1 rounded">192.168.1.10</code> com máscara <code className="text-primary bg-primary/10 px-1 rounded">/24</code> na interface eth0.
+                  Faça o deploy da aplicação usando o comando <code className="text-primary bg-primary/10 px-1 rounded">deploy</code> no servidor <code className="text-primary bg-primary/10 px-1 rounded">production</code>.
                 </p>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <CheckCircle className="w-4 h-4 text-accent" />
-                    <span>Acessar modo de configuração</span>
+                    <span>Conectar ao servidor</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <CheckCircle className="w-4 h-4 text-accent" />
-                    <span>Selecionar interface eth0</span>
+                    <span>Verificar dependências</span>
                   </div>
                   <div className="flex items-center gap-2 text-foreground">
                     <div className="w-4 h-4 rounded-full border-2 border-primary animate-pulse" />
-                    <span>Atribuir endereço IP</span>
+                    <span>Executar deploy</span>
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground opacity-50">
                     <XCircle className="w-4 h-4" />
-                    <span>Verificar configuração</span>
+                    <span>Verificar status</span>
                   </div>
                 </div>
               </div>
@@ -99,34 +99,34 @@ const LabsSection = () => {
               <div className="lg:col-span-2 bg-[hsl(222_47%_4%)] p-6">
                 <div className="font-mono text-sm space-y-2">
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netops@lab</span>
+                    <span className="text-accent">techops@lab</span>
                     <span className="text-muted-foreground">:</span>
                     <span className="text-primary">~</span>
                     <span className="text-muted-foreground">$ </span>
-                    <span className="text-foreground">enable</span>
+                    <span className="text-foreground">ssh production</span>
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netops@lab</span>
+                    <span className="text-accent">techops@lab</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
-                    <span className="text-foreground">configure terminal</span>
+                    <span className="text-foreground">npm install</span>
                   </div>
                   <div className="text-accent text-xs">
-                    Entrando no modo de configuração global...
+                    Instalando dependências...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netops</span>
-                    <span className="text-muted-foreground">(config)</span>
+                    <span className="text-accent">techops</span>
+                    <span className="text-muted-foreground">(prod)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
-                    <span className="text-foreground">interface eth0</span>
+                    <span className="text-foreground">npm run build</span>
                   </div>
                   <div className="text-accent text-xs">
-                    Configurando interface ethernet 0...
+                    Build concluído com sucesso...
                   </div>
                   <div className="text-muted-foreground">
-                    <span className="text-accent">netops</span>
-                    <span className="text-muted-foreground">(config-if)</span>
+                    <span className="text-accent">techops</span>
+                    <span className="text-muted-foreground">(prod)</span>
                     <span className="text-primary">#</span>
                     <span className="text-muted-foreground"> </span>
                     <span className="text-foreground animate-pulse">_</span>
