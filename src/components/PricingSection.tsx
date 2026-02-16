@@ -69,10 +69,10 @@ const PricingSection = () => {
             Planos Flexíveis
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Invista no seu <span className="gradient-text">conteúdo e torne suas auals mais dinâmicas</span>
+            Invista no seu <span className="gradient-text">conteúdo e torne suas aulas mais dinâmicas</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Escolha o plano ideal para sua jornada de aprendizado em redes de computadores.
+            Escolha o plano ideal para sua jornada de aprendizado em tecnologia.
           </p>
         </div>
 

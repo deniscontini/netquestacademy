@@ -1,4 +1,4 @@
-import { Network, Wifi, Zap, Award, BookOpen, Users } from "lucide-react";
+import { Code, Laptop, Zap, Award, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-network.jpg";
 
@@ -16,10 +16,10 @@ const HeroSection = () => {
 
       {/* Floating Elements */}
       <div className="absolute top-1/4 left-10 animate-float opacity-20">
-        <Wifi className="w-16 h-16 text-primary" />
+        <Code className="w-16 h-16 text-primary" />
       </div>
       <div className="absolute bottom-1/3 right-16 animate-float opacity-20" style={{ animationDelay: "2s" }}>
-        <Network className="w-20 h-20 text-accent" />
+        <Laptop className="w-20 h-20 text-accent" />
       </div>
 
       <div className="container mx-auto px-4 z-10 text-center">
@@ -32,15 +32,15 @@ const HeroSection = () => {
 
           {/* Main Title */}
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-            Ensine <span className="gradient-text">Redes de</span>
+            Ensine <span className="gradient-text">Tecnologia</span>
             <br />
-            <span className="gradient-text">Computadores</span>
+            <span className="gradient-text">de forma Gamificada</span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Plataforma gamificada com laboratórios práticos. Aprenda desde os fundamentos até diagnósticos avançados
-            enquanto ganha XP, badges e sobe no ranking.
+            Plataforma gamificada com laboratórios práticos para todas as áreas de T.I.
+            Seus alunos ganham XP, badges e sobem no ranking enquanto aprendem.
           </p>
 
           {/* CTA Buttons */}

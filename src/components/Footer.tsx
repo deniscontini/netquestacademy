@@ -1,4 +1,4 @@
-import { Network, Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { GraduationCap, Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -9,12 +9,12 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <Network className="w-5 h-5 text-primary-foreground" />
+                <GraduationCap className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">NetOps Academy</span>
+              <span className="text-xl font-bold">TechOps Academy</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Aprenda redes de computadores de forma gamificada e prática.
+              Aprenda tecnologia de forma gamificada e prática.
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
@@ -67,7 +67,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-border mt-12 pt-8 text-center text-sm text-muted-foreground">
-          <p>© 2026 NetOps Academy. Todos os direitos reservados.</p>
+          <p>© 2026 TechOps Academy. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

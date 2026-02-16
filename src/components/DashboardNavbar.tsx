@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Network, LogOut, User, ChevronDown, Shield, Crown } from "lucide-react";
+import { GraduationCap, LogOut, User, ChevronDown, Shield, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,9 +40,9 @@ const DashboardNavbar = () => {
           {/* Logo */}
           <a href="/dashboard" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Network className="w-5 h-5 text-primary-foreground" />
+              <GraduationCap className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">NetOps Academy</span>
+            <span className="text-xl font-bold">TechOps Academy</span>
           </a>
 
           {/* Navigation */}
