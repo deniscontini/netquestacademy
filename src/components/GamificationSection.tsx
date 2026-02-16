@@ -46,8 +46,9 @@ const GamificationSection = () => {
             <Star className="w-3 h-3 mr-1" /> Sistema de Gamificação
           </Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            {" "}
             Ensine através de
-            <span className="gradient-text-accent">jogos e desafios</span>
+            <span className="gradient-text-accent"> jogos e desafios</span>
           </h2>
           <p className="text-lg text-muted-foreground">
             Ganhe XP, desbloqueie badges exclusivas e dispute o topo do ranking global. Cada desafio superado te
