@@ -4,21 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 const badges = [
-{ icon: "🚀", name: "First Step", description: "Complete seu primeiro lab" },
-{ icon: "📚", name: "Quick Learner", description: "Complete 5 lições seguidas" },
-{ icon: "🔧", name: "Troubleshooter", description: "Resolva 10 desafios práticos" },
-{ icon: "🏆", name: "Tech Pro", description: "Complete todos os módulos" },
-{ icon: "⚡", name: "Speed Demon", description: "Complete um lab em menos de 5min" },
-{ icon: "🛡️", name: "Security First", description: "Domine um módulo de segurança" }];
-
+  { icon: "🚀", name: "First Step", description: "Complete seu primeiro lab" },
+  { icon: "📚", name: "Quick Learner", description: "Complete 5 lições seguidas" },
+  { icon: "🔧", name: "Troubleshooter", description: "Resolva 10 desafios práticos" },
+  { icon: "🏆", name: "Tech Pro", description: "Complete todos os módulos" },
+  { icon: "⚡", name: "Speed Demon", description: "Complete um lab em menos de 5min" },
+  { icon: "🛡️", name: "Security First", description: "Domine um módulo de segurança" },
+];
 
 const leaderboard = [
-{ rank: 1, name: "DevMaster_BR", xp: 15420, level: 25, badge: "diamond" },
-{ rank: 2, name: "CyberTech99", xp: 14200, level: 23, badge: "platinum" },
-{ rank: 3, name: "CloudKing", xp: 13800, level: 22, badge: "gold" },
-{ rank: 4, name: "CodeHunter", xp: 12500, level: 20, badge: "gold" },
-{ rank: 5, name: "DataNinja_Pro", xp: 11900, level: 19, badge: "silver" }];
-
+  { rank: 1, name: "DevMaster_BR", xp: 15420, level: 25, badge: "diamond" },
+  { rank: 2, name: "CyberTech99", xp: 14200, level: 23, badge: "platinum" },
+  { rank: 3, name: "CloudKing", xp: 13800, level: 22, badge: "gold" },
+  { rank: 4, name: "CodeHunter", xp: 12500, level: 20, badge: "gold" },
+  { rank: 5, name: "DataNinja_Pro", xp: 11900, level: 19, badge: "silver" },
+];
 
 const getRankBadge = (rank: number) => {
   switch (rank) {
@@ -45,11 +45,13 @@ const GamificationSection = () => {
           <Badge variant="new" className="mb-4">
             <Star className="w-3 h-3 mr-1" /> Sistema de Gamificação
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">Ensine através de jogos e desafios
-            <span className="gradient-text-accent">Jogando</span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ensine através de
+            <span className="gradient-text-accent">jogos e desafios</span>
           </h2>
-          <p className="text-lg text-muted-foreground">Ganhe XP, desbloqueie badges exclusivas e dispute o topo do ranking global. Cada desafio superado te aproxima do próximo nível.
-
+          <p className="text-lg text-muted-foreground">
+            Ganhe XP, desbloqueie badges exclusivas e dispute o topo do ranking global. Cada desafio superado te
+            aproxima do próximo nível.
           </p>
         </div>
 
@@ -109,17 +111,17 @@ const GamificationSection = () => {
                 </h3>
                 <span className="text-sm text-muted-foreground">0/{badges.length}</span>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                {badges.map((badge, index) =>
-                <div
-                  key={index}
-                  className="flex flex-col items-center text-center p-3 rounded-lg bg-secondary/50 border border-border/50 opacity-50 hover:opacity-70 transition-opacity">
 
+              <div className="grid grid-cols-3 gap-4">
+                {badges.map((badge, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center text-center p-3 rounded-lg bg-secondary/50 border border-border/50 opacity-50 hover:opacity-70 transition-opacity"
+                  >
                     <span className="text-2xl mb-2 grayscale">{badge.icon}</span>
                     <span className="text-xs font-medium line-clamp-1">{badge.name}</span>
                   </div>
-                )}
+                ))}
               </div>
             </Card>
           </div>
@@ -131,37 +133,37 @@ const GamificationSection = () => {
                 <Trophy className="w-5 h-5 text-[hsl(45_90%_55%)]" />
                 Ranking Global
               </h3>
-              <Badge variant="outline" className="text-xs">Top 5</Badge>
+              <Badge variant="outline" className="text-xs">
+                Top 5
+              </Badge>
             </div>
 
             <div className="space-y-3">
-              {leaderboard.map((player) =>
-              <div
-                key={player.rank}
-                className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
-                player.rank <= 3 ?
-                'bg-gradient-to-r from-secondary to-transparent border border-border/30' :
-                'bg-secondary/30 hover:bg-secondary/50'}`
-                }>
+              {leaderboard.map((player) => (
+                <div
+                  key={player.rank}
+                  className={`flex items-center gap-4 p-4 rounded-xl transition-colors ${
+                    player.rank <= 3
+                      ? "bg-gradient-to-r from-secondary to-transparent border border-border/30"
+                      : "bg-secondary/30 hover:bg-secondary/50"
+                  }`}
+                >
+                  <div className="text-2xl w-10 text-center">{getRankBadge(player.rank)}</div>
 
-                  <div className="text-2xl w-10 text-center">
-                    {getRankBadge(player.rank)}
-                  </div>
-                  
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-bold text-sm border border-primary/20">
                     {player.name.slice(0, 2).toUpperCase()}
                   </div>
-                  
+
                   <div className="flex-1">
                     <div className="font-semibold">{player.name}</div>
                     <div className="text-xs text-muted-foreground">Nível {player.level}</div>
                   </div>
-                  
+
                   <Badge variant={player.badge as any} className="font-mono">
                     {player.xp.toLocaleString()} XP
                   </Badge>
                 </div>
-              )}
+              ))}
             </div>
 
             <div className="mt-6 pt-6 border-t border-border">
@@ -176,14 +178,16 @@ const GamificationSection = () => {
                     <div className="text-xs text-muted-foreground">Complete labs para aparecer</div>
                   </div>
                 </div>
-                <Badge variant="xp" className="font-mono">0 XP</Badge>
+                <Badge variant="xp" className="font-mono">
+                  0 XP
+                </Badge>
               </div>
             </div>
           </Card>
         </div>
       </div>
-    </section>);
-
+    </section>
+  );
 };
 
 export default GamificationSection;
