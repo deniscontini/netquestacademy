@@ -39,8 +39,8 @@ const HeroSection = () => {
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Plataforma gamificada com laboratórios práticos para todas as áreas de T.I.
-            Seus alunos ganham XP, badges e sobem no ranking enquanto aprendem.
+            Plataforma gamificada com laboratórios práticos para todas as áreas de T.I. Seus alunos ganham XP, badges e
+            sobem no ranking enquanto aprendem.
           </p>
 
           {/* CTA Buttons */}
@@ -50,7 +50,7 @@ const HeroSection = () => {
             </Button>
             <Button variant="outline" size="xl">
               <BookOpen className="w-5 h-5 mr-2" />
-              Ver Módulos
+              Ver Planos
             </Button>
           </div>
 
