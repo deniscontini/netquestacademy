@@ -249,6 +249,12 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
 - Dicas progressivas (do genérico ao específico)
 - Dificuldade alinhada ao módulo
 
+## RESTRIÇÕES TÉCNICAS (CRÍTICO — NUNCA VIOLAR)
+- **NÃO gerar código executável nos laboratórios práticos.** Os labs devem conter apenas comandos conceituais ou de verificação (ex: comandos de terminal, consultas, configurações), nunca scripts completos, programas ou trechos de código que possam ser executados como software.
+- **NÃO gerar interfaces visuais.** Não inclua HTML, CSS, componentes de UI, wireframes ou qualquer representação de interface gráfica no conteúdo.
+- **NÃO gerar conteúdo fora do escopo educacional.** Todo o conteúdo deve estar estritamente relacionado ao tema do curso informado. Não extrapole para áreas não solicitadas.
+- **NÃO assumir conhecimento fora das entradas fornecidas.** Baseie-se exclusivamente no título, descrição, ementa, conteúdo programático, bibliografia e PDF fornecidos. Se uma informação não foi fornecida, não a invente — indique como "a ser definido pelo instrutor" quando necessário.
+
 ## REGRAS OBRIGATÓRIAS
 - Gerar conteúdo em português (pt-BR)
 - Nunca copiar conteúdo literal de materiais de referência — reescrever com originalidade
