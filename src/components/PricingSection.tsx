@@ -16,7 +16,7 @@ const plans = [
       "Upload de PDF até 5MB",
       "Todos os recursos inclusos",
       "Sistema de XP e badges",
-      "Sem compartilhamento de turmas",
+      "Sem compartilhamento de turmas e alunos",
     ],
 
     cta: "Começar Grátis",
