@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMasterAdmins, useCreateAdmin, useDeleteAdmin } from "@/hooks/useMasterData";
+import { useMasterAdmins, useCreateAdmin, useDeleteAdmin, useUpdateAdmin, useUpdateAdminPlan, MasterAdmin } from "@/hooks/useMasterData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,25 +16,46 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Search, UserPlus, Shield, Users, Trash2, Eye } from "lucide-react";
+import { Search, UserPlus, Shield, Users, Trash2, Eye, Pencil, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
+const planLabels: Record<string, string> = {
+  gratuito: "Gratuito",
+  pro: "Pro",
+  enterprise: "Enterprise",
+};
+
+const planColors: Record<string, string> = {
+  gratuito: "bg-muted text-muted-foreground",
+  pro: "bg-primary/10 text-primary",
+  enterprise: "bg-accent text-accent-foreground",
+};
+
 const MasterAdmins = () => {
   const { data: admins, isLoading } = useMasterAdmins();
   const createAdmin = useCreateAdmin();
   const deleteAdmin = useDeleteAdmin();
+  const updateAdmin = useUpdateAdmin();
+  const updateAdminPlan = useUpdateAdminPlan();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<string | null>(null);
   const [newAdmin, setNewAdmin] = useState({ email: "", password: "", fullName: "", username: "" });
+  const [editData, setEditData] = useState({ fullName: "", username: "" });
+  const [selectedPlan, setSelectedPlan] = useState("gratuito");
 
   const filteredAdmins = admins?.filter(
     (a) =>
@@ -47,7 +68,6 @@ const MasterAdmins = () => {
       toast({ title: "Erro", description: "Email e senha são obrigatórios", variant: "destructive" });
       return;
     }
-
     try {
       await createAdmin.mutateAsync(newAdmin);
       toast({ title: "Sucesso", description: "Administrador criado com sucesso" });
@@ -69,6 +89,42 @@ const MasterAdmins = () => {
       setDeleteDialogOpen(false);
       setSelectedAdmin(null);
     }
+  };
+
+  const handleEdit = async () => {
+    if (!selectedAdmin) return;
+    try {
+      await updateAdmin.mutateAsync({ userId: selectedAdmin, ...editData });
+      toast({ title: "Sucesso", description: "Dados atualizados com sucesso" });
+      setEditDialogOpen(false);
+      setSelectedAdmin(null);
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handlePlanChange = async () => {
+    if (!selectedAdmin) return;
+    try {
+      await updateAdminPlan.mutateAsync({ userId: selectedAdmin, plan: selectedPlan });
+      toast({ title: "Sucesso", description: `Plano alterado para ${planLabels[selectedPlan]}` });
+      setPlanDialogOpen(false);
+      setSelectedAdmin(null);
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const openEditDialog = (admin: MasterAdmin) => {
+    setSelectedAdmin(admin.admin_id);
+    setEditData({ fullName: admin.full_name || "", username: admin.username || "" });
+    setEditDialogOpen(true);
+  };
+
+  const openPlanDialog = (admin: MasterAdmin) => {
+    setSelectedAdmin(admin.admin_id);
+    setSelectedPlan(admin.plan);
+    setPlanDialogOpen(true);
   };
 
   if (isLoading) {
@@ -110,10 +166,11 @@ const MasterAdmins = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Administrador</TableHead>
+                  <TableHead>Plano</TableHead>
                   <TableHead>Alunos</TableHead>
                   <TableHead>Nível</TableHead>
                   <TableHead>Criado em</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
+                  <TableHead className="w-32">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,6 +191,11 @@ const MasterAdmins = () => {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline" className={planColors[admin.plan] || ""}>
+                        {planLabels[admin.plan] || admin.plan}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="outline" className="gap-1">
                         <Users className="w-3 h-3" />
                         {admin.student_count}
@@ -147,12 +209,17 @@ const MasterAdmins = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" title="Editar dados" onClick={() => openEditDialog(admin)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Alterar plano" onClick={() => openPlanDialog(admin)}>
+                          <CreditCard className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           title="Ver ambiente do admin"
                           onClick={() => {
-                            // Store impersonation context and navigate to admin panel
                             sessionStorage.setItem("impersonate_admin_id", admin.admin_id);
                             navigate("/admin");
                           }}
@@ -212,6 +279,63 @@ const MasterAdmins = () => {
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={createAdmin.isPending}>
               {createAdmin.isPending ? "Criando..." : "Criar Administrador"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Admin Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Administrador</DialogTitle>
+            <DialogDescription>Altere os dados do administrador.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome Completo</Label>
+              <Input value={editData.fullName} onChange={(e) => setEditData({ ...editData, fullName: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Username</Label>
+              <Input value={editData.username} onChange={(e) => setEditData({ ...editData, username: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleEdit} disabled={updateAdmin.isPending}>
+              {updateAdmin.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Plan Dialog */}
+      <Dialog open={planDialogOpen} onOpenChange={setPlanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Plano</DialogTitle>
+            <DialogDescription>Selecione o novo plano para este administrador.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gratuito">Gratuito</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlanDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handlePlanChange} disabled={updateAdminPlan.isPending}>
+              {updateAdminPlan.isPending ? "Alterando..." : "Alterar Plano"}
             </Button>
           </DialogFooter>
         </DialogContent>

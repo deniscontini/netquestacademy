@@ -12,6 +12,7 @@ export interface MasterAdmin {
   level: number;
   created_at: string;
   student_count: number;
+  plan: string;
 }
 
 // Fetch admins linked to the current master
@@ -49,9 +50,16 @@ export const useMasterAdmins = () => {
 
       if (studentError) throw studentError;
 
+      // Get subscriptions
+      const { data: subscriptions } = await supabase
+        .from("user_subscriptions")
+        .select("user_id, plan")
+        .in("user_id", adminIds);
+
       return links.map((link) => {
         const profile = profiles?.find((p) => p.user_id === link.admin_id);
         const studentCount = studentLinks?.filter((s) => s.admin_id === link.admin_id).length || 0;
+        const sub = subscriptions?.find((s) => s.user_id === link.admin_id);
 
         return {
           id: link.id,
@@ -63,6 +71,7 @@ export const useMasterAdmins = () => {
           level: profile?.level || 1,
           created_at: link.created_at,
           student_count: studentCount,
+          plan: sub?.plan || "gratuito",
         };
       });
     },
@@ -173,5 +182,69 @@ export const useMasterStats = () => {
       };
     },
     enabled: !!user,
+  });
+};
+
+
+export const useUpdateAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; fullName?: string; username?: string }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=update-admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update admin");
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["master", "admins"] });
+    },
+  });
+};
+
+// Update admin plan
+export const useUpdateAdminPlan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; plan: string }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-users?action=update-admin-plan`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to update plan");
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["master", "admins"] });
+    },
   });
 };

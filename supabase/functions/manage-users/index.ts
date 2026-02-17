@@ -141,6 +141,122 @@ Deno.serve(async (req) => {
         );
       }
 
+      case "update-admin": {
+        if (!isMaster) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized: Master access required" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const body = await req.json();
+        const { userId, fullName, username } = body;
+
+        if (!userId) {
+          return new Response(
+            JSON.stringify({ error: "User ID is required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify master owns this admin
+        const { data: mLink } = await supabaseAdmin
+          .from("master_admins")
+          .select("id")
+          .eq("master_id", caller.id)
+          .eq("admin_id", userId)
+          .single();
+
+        if (!mLink) {
+          return new Response(
+            JSON.stringify({ error: "You can only edit admins linked to your account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const updates: Record<string, unknown> = {};
+        if (fullName !== undefined) updates.full_name = fullName;
+        if (username !== undefined) updates.username = username;
+
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await supabaseAdmin
+            .from("profiles")
+            .update(updates)
+            .eq("user_id", userId);
+
+          if (updateError) {
+            return new Response(
+              JSON.stringify({ error: updateError.message }),
+              { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "update-admin-plan": {
+        if (!isMaster) {
+          return new Response(
+            JSON.stringify({ error: "Unauthorized: Master access required" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const body = await req.json();
+        const { userId, plan } = body;
+
+        if (!userId || !plan) {
+          return new Response(
+            JSON.stringify({ error: "User ID and plan are required" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const validPlans = ["gratuito", "pro", "enterprise"];
+        if (!validPlans.includes(plan)) {
+          return new Response(
+            JSON.stringify({ error: "Invalid plan. Use: gratuito, pro, enterprise" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Verify master owns this admin
+        const { data: mLink2 } = await supabaseAdmin
+          .from("master_admins")
+          .select("id")
+          .eq("master_id", caller.id)
+          .eq("admin_id", userId)
+          .single();
+
+        if (!mLink2) {
+          return new Response(
+            JSON.stringify({ error: "You can only edit admins linked to your account" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const { error: planError } = await supabaseAdmin
+          .from("user_subscriptions")
+          .update({ plan, updated_at: new Date().toISOString() })
+          .eq("user_id", userId);
+
+        if (planError) {
+          return new Response(
+            JSON.stringify({ error: planError.message }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       case "delete-admin": {
         // Only masters can delete admins
         if (!isMaster) {
@@ -467,7 +583,7 @@ Deno.serve(async (req) => {
 
       default:
         return new Response(
-          JSON.stringify({ error: "Invalid action. Use: create, delete, batch-create, batch-delete, create-admin, delete-admin" }),
+          JSON.stringify({ error: "Invalid action. Use: create, delete, batch-create, batch-delete, create-admin, update-admin, update-admin-plan, delete-admin" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }
