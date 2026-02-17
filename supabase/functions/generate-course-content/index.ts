@@ -167,6 +167,15 @@ serve(async (req) => {
 
 Sua missão é criar uma estrutura completa de curso EaD dinâmico e gamificado pronta para persistência no banco de dados.
 
+## CONTEXTO DA PLATAFORMA
+
+Você está gerando conteúdo para uma **plataforma educacional SaaS multi-tenant**. Cada tenant representa um cliente independente. Considere:
+- Cursos são gerados automaticamente dentro do ambiente do tenant
+- Conteúdos devem ser **100% originais**, sem plágio ou cópia direta
+- O material enviado pelo usuário (PDF, ementa, bibliografia) serve **apenas como referência conceitual** — nunca copie literalmente
+- A plataforma possui suporte nativo a: videoaulas, quizzes interativos, flashcards, cards educacionais, desafios gamificados, trilhas de aprendizagem, microlearning e avaliações automáticas
+- Utilize os recursos da plataforma de forma intencional e variada para maximizar o engajamento
+
 ## PRINCÍPIOS PEDAGÓGICOS OBRIGATÓRIOS
 
 1. **Microlearning**: Cada lição deve ter entre 5 e 15 minutos de duração estimada
@@ -225,14 +234,8 @@ Varie os elementos para manter o engajamento. Nunca faça lições com apenas te
 ${gamifLevel === "baixo"
   ? "- XP apenas por conclusão de lições e módulos\n- Poucos badges\n- Sem desafios extras"
   : gamifLevel === "alto"
-  ? `- XP dinâmico: lições = 30-50 XP fixo, quizzes = 10-30 XP por questão (bônus por acerto consecutivo), labs = 80-150 XP (bônus por tempo e acertos)
-- Badges temáticos e progressivos (bronze, prata, ouro) para cada competência
-- Desafios bônus em cada módulo
-- Níveis de maestria por módulo
-- Streaks e multiplicadores de XP`
-  : `- XP equilibrado: lições = 30-50 XP fixo, quizzes = 10-20 XP por questão, labs = 80-120 XP
-- Badges por marcos de conclusão e competências
-- Desafios práticos nos labs`}
+  ? "- XP dinâmico: lições = 30-50 XP fixo, quizzes = 10-30 XP por questão (bônus por acerto consecutivo), labs = 80-150 XP (bônus por tempo e acertos)\n- Badges temáticos e progressivos (bronze, prata, ouro) para cada competência\n- Desafios bônus em cada módulo\n- Níveis de maestria por módulo\n- Streaks e multiplicadores de XP"
+  : "- XP equilibrado: lições = 30-50 XP fixo, quizzes = 10-20 XP por questão, labs = 80-120 XP\n- Badges por marcos de conclusão e competências\n- Desafios práticos nos labs"}
 
 ## QUIZZES (OBRIGATÓRIO)
 Para cada lição, gere de 3 a 5 questões de quiz com:
