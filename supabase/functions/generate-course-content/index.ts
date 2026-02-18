@@ -8,13 +8,59 @@ const corsHeaders = {
 };
 
 async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
-  // Use HEAD request to check file size without downloading the full file
   try {
     const headResponse = await fetch(pdfUrl, { method: "HEAD" });
     const contentLength = headResponse.headers.get("content-length");
     if (contentLength) return parseInt(contentLength, 10);
-  } catch (_) { /* fallback below */ }
+  } catch (_) { /* fallback */ }
   return 0;
+}
+
+// Downloads PDF up to maxBytes, converts to base64
+async function downloadPdfAsBase64(pdfUrl: string, maxBytes: number): Promise<string | null> {
+  try {
+    const response = await fetch(pdfUrl);
+    if (!response.ok || !response.body) return null;
+
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+
+      const remaining = maxBytes - totalBytes;
+      if (value.byteLength <= remaining) {
+        chunks.push(value);
+        totalBytes += value.byteLength;
+      } else {
+        chunks.push(value.slice(0, remaining));
+        totalBytes += remaining;
+        reader.cancel();
+        break;
+      }
+    }
+
+    // Merge chunks
+    const merged = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      merged.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    // Convert to base64
+    let binary = "";
+    const len = merged.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(merged[i]);
+    }
+    return btoa(binary);
+  } catch (e) {
+    console.error("PDF download error:", e);
+    return null;
+  }
 }
 
 serve(async (req) => {
@@ -298,22 +344,31 @@ Como não há documento de referência anexado, você DEVE:
   Com fontes reais e verificáveis`;
     }
 
-    // Build messages — pass PDF as URL reference (no in-memory base64 encoding)
+    // Build messages — download PDF as base64 (capped at 4MB to avoid memory limits)
     let userMessage: any;
     if (validatedPdfUrl) {
-      userMessage = {
-        role: "user",
-        content: [
-          { type: "text", text: userPrompt },
-          {
-            type: "file",
-            file: {
-              url: validatedPdfUrl,
-              mime_type: "application/pdf",
+      const MAX_PDF_BYTES = 4 * 1024 * 1024; // 4MB cap for edge function memory safety
+      console.log("Downloading PDF as base64 (capped at 4MB)...");
+      const pdfBase64 = await downloadPdfAsBase64(validatedPdfUrl, MAX_PDF_BYTES);
+
+      if (pdfBase64) {
+        console.log(`PDF base64 ready: ~${(pdfBase64.length / 1024 / 1024 * 0.75).toFixed(2)}MB raw`);
+        userMessage = {
+          role: "user",
+          content: [
+            { type: "text", text: userPrompt },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${pdfBase64}`,
+              },
             },
-          },
-        ],
-      };
+          ],
+        };
+      } else {
+        console.warn("PDF download failed, proceeding without PDF");
+        userMessage = { role: "user", content: userPrompt };
+      }
     } else {
       userMessage = { role: "user", content: userPrompt };
     }
