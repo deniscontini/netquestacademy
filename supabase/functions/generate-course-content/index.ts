@@ -16,53 +16,6 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
-// Downloads PDF up to maxBytes, converts to base64
-async function downloadPdfAsBase64(pdfUrl: string, maxBytes: number): Promise<string | null> {
-  try {
-    const response = await fetch(pdfUrl);
-    if (!response.ok || !response.body) return null;
-
-    const reader = response.body.getReader();
-    const chunks: Uint8Array[] = [];
-    let totalBytes = 0;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done || !value) break;
-
-      const remaining = maxBytes - totalBytes;
-      if (value.byteLength <= remaining) {
-        chunks.push(value);
-        totalBytes += value.byteLength;
-      } else {
-        chunks.push(value.slice(0, remaining));
-        totalBytes += remaining;
-        reader.cancel();
-        break;
-      }
-    }
-
-    // Merge chunks
-    const merged = new Uint8Array(totalBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      merged.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-
-    // Convert to base64
-    let binary = "";
-    const len = merged.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(merged[i]);
-    }
-    return btoa(binary);
-  } catch (e) {
-    console.error("PDF download error:", e);
-    return null;
-  }
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -332,7 +285,7 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
     if (bibliography) userPrompt += `\n**Bibliografia:** ${bibliography}`;
 
     if (validatedPdfUrl) {
-      userPrompt += `\n\n**IMPORTANTE:** Um documento PDF de referência está disponível. Use seu conteúdo como base conceitual para gerar o material — NUNCA copie literalmente, reescreva com originalidade mantendo a essência pedagógica. Extraia conceitos, definições e exemplos para enriquecer as lições.`;
+      userPrompt += `\n\n**IMPORTANTE:** O administrador forneceu um documento PDF de referência (${validatedPdfUrl}). Com base na ementa, conteúdo programático e bibliografia fornecidos acima — que refletem o conteúdo desse documento — gere o material do curso de forma original. NUNCA copie literalmente; reescreva com originalidade mantendo a essência pedagógica.`;
     } else {
       userPrompt += `\n\n**IMPORTANTE — Fontes e Referências:**
 Como não há documento de referência anexado, você DEVE:
@@ -344,34 +297,12 @@ Como não há documento de referência anexado, você DEVE:
   Com fontes reais e verificáveis`;
     }
 
-    // Build messages — download PDF as base64 (capped at 4MB to avoid memory limits)
-    let userMessage: any;
-    if (validatedPdfUrl) {
-      const MAX_PDF_BYTES = 4 * 1024 * 1024; // 4MB cap for edge function memory safety
-      console.log("Downloading PDF as base64 (capped at 4MB)...");
-      const pdfBase64 = await downloadPdfAsBase64(validatedPdfUrl, MAX_PDF_BYTES);
-
-      if (pdfBase64) {
-        console.log(`PDF base64 ready: ~${(pdfBase64.length / 1024 / 1024 * 0.75).toFixed(2)}MB raw`);
-        userMessage = {
-          role: "user",
-          content: [
-            { type: "text", text: userPrompt },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:application/pdf;base64,${pdfBase64}`,
-              },
-            },
-          ],
-        };
-      } else {
-        console.warn("PDF download failed, proceeding without PDF");
-        userMessage = { role: "user", content: userPrompt };
-      }
-    } else {
-      userMessage = { role: "user", content: userPrompt };
-    }
+    // Build message — text only. Sending binary PDF data (even base64) causes
+    // "The document has no pages" errors when the file is truncated due to memory limits.
+    // The structured text fields (syllabus, curriculum, bibliography) already carry
+    // the semantic content needed for high-quality course generation.
+    const userMessage = { role: "user", content: userPrompt };
+    console.log(`Generating course content (PDF reference: ${validatedPdfUrl ? "yes (text-only mode)" : "no"})`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
