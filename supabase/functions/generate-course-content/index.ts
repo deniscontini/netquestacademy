@@ -7,13 +7,14 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
+  // Use HEAD request to check file size without downloading the full file
+  try {
+    const headResponse = await fetch(pdfUrl, { method: "HEAD" });
+    const contentLength = headResponse.headers.get("content-length");
+    if (contentLength) return parseInt(contentLength, 10);
+  } catch (_) { /* fallback below */ }
+  return 0;
 }
 
 serve(async (req) => {
@@ -138,18 +139,13 @@ serve(async (req) => {
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Download and encode PDF if provided ----
-    let pdfBase64: string | null = null;
+    // ---- Validate PDF size via HEAD request (no download needed) ----
+    let validatedPdfUrl: string | null = null;
     if (pdfUrl) {
-      console.log("Downloading PDF from:", pdfUrl);
+      console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
-        const pdfResponse = await fetch(pdfUrl);
-        if (!pdfResponse.ok) {
-          console.error("Failed to download PDF:", pdfResponse.status);
-          throw new Error("Falha ao baixar o PDF do storage");
-        }
-        const pdfBuffer = await pdfResponse.arrayBuffer();
-        if (pdfBuffer.byteLength > maxPdfSize) {
+        const pdfSizeBytes = await getPdfSizeBytes(pdfUrl);
+        if (pdfSizeBytes > 0 && pdfSizeBytes > maxPdfSize) {
           return new Response(
             JSON.stringify({ error: `PDF excede o limite de ${maxPdfMB}MB para o plano ${userPlan}. Faça upgrade para aumentar o limite.` }),
             {
@@ -158,11 +154,12 @@ serve(async (req) => {
             }
           );
         }
-        pdfBase64 = arrayBufferToBase64(pdfBuffer);
-        console.log(`PDF encoded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
+        validatedPdfUrl = pdfUrl;
+        console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
       } catch (e) {
-        console.error("PDF processing error:", e);
-        pdfBase64 = null;
+        console.error("PDF size check error:", e);
+        // Allow to proceed without PDF if check fails
+        validatedPdfUrl = null;
       }
     }
 
@@ -288,8 +285,8 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
     if (curriculum) userPrompt += `\n**Conteúdo Programático:** ${curriculum}`;
     if (bibliography) userPrompt += `\n**Bibliografia:** ${bibliography}`;
 
-    if (pdfBase64) {
-      userPrompt += `\n\n**IMPORTANTE:** Um documento PDF de referência está anexado. Use seu conteúdo como base conceitual para gerar o material — NUNCA copie literalmente, reescreva com originalidade mantendo a essência pedagógica. Extraia conceitos, definições e exemplos para enriquecer as lições.`;
+    if (validatedPdfUrl) {
+      userPrompt += `\n\n**IMPORTANTE:** Um documento PDF de referência está disponível. Use seu conteúdo como base conceitual para gerar o material — NUNCA copie literalmente, reescreva com originalidade mantendo a essência pedagógica. Extraia conceitos, definições e exemplos para enriquecer as lições.`;
     } else {
       userPrompt += `\n\n**IMPORTANTE — Fontes e Referências:**
 Como não há documento de referência anexado, você DEVE:
@@ -301,17 +298,18 @@ Como não há documento de referência anexado, você DEVE:
   Com fontes reais e verificáveis`;
     }
 
-    // Build messages
+    // Build messages — pass PDF as URL reference (no in-memory base64 encoding)
     let userMessage: any;
-    if (pdfBase64) {
+    if (validatedPdfUrl) {
       userMessage = {
         role: "user",
         content: [
           { type: "text", text: userPrompt },
           {
-            type: "image_url",
-            image_url: {
-              url: `data:application/pdf;base64,${pdfBase64}`,
+            type: "file",
+            file: {
+              url: validatedPdfUrl,
+              mime_type: "application/pdf",
             },
           },
         ],
