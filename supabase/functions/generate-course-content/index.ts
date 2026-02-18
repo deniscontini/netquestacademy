@@ -129,6 +129,15 @@ serve(async (req) => {
       );
     }
 
+    // ---- PDF size limits per plan ----
+    const PDF_LIMITS: Record<string, number> = {
+      gratuito: 5 * 1024 * 1024,   // 5MB
+      pro: 20 * 1024 * 1024,       // 20MB
+      enterprise: 20 * 1024 * 1024, // 20MB
+    };
+    const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
+    const maxPdfMB = maxPdfSize / 1024 / 1024;
+
     // ---- Download and encode PDF if provided ----
     let pdfBase64: string | null = null;
     if (pdfUrl) {
@@ -140,10 +149,9 @@ serve(async (req) => {
           throw new Error("Falha ao baixar o PDF do storage");
         }
         const pdfBuffer = await pdfResponse.arrayBuffer();
-        const MAX_PDF_SIZE = 20 * 1024 * 1024;
-        if (pdfBuffer.byteLength > MAX_PDF_SIZE) {
+        if (pdfBuffer.byteLength > maxPdfSize) {
           return new Response(
-            JSON.stringify({ error: "PDF excede o limite de 20MB para processamento" }),
+            JSON.stringify({ error: `PDF excede o limite de ${maxPdfMB}MB para o plano ${userPlan}. Faça upgrade para aumentar o limite.` }),
             {
               status: 400,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -151,7 +159,7 @@ serve(async (req) => {
           );
         }
         pdfBase64 = arrayBufferToBase64(pdfBuffer);
-        console.log(`PDF encoded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+        console.log(`PDF encoded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
       } catch (e) {
         console.error("PDF processing error:", e);
         pdfBase64 = null;

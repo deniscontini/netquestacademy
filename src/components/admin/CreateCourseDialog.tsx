@@ -417,7 +417,16 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
               {/* PDF Upload */}
               <div className="space-y-1.5">
-                <Label className="text-sm">Arquivo PDF de Referência (opcional, máx. {limits.maxPdfSizeMB}MB)</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Arquivo PDF de Referência (opcional)</Label>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    plan === "gratuito"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-primary/10 text-primary"
+                  }`}>
+                    {plan === "gratuito" ? "Gratuito: máx. 5MB" : "Pro/Enterprise: máx. 20MB"}
+                  </span>
+                </div>
                 {form.pdfFile ? (
                   <div className="flex items-center gap-2 p-2.5 sm:p-3 border rounded-md bg-muted/50">
                     <FileText className="w-4 h-4 text-primary shrink-0" />
@@ -445,7 +454,16 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       Clique ou arraste um PDF aqui
                     </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+                      Máximo {limits.maxPdfSizeMB}MB · somente PDF
+                    </p>
                   </div>
+                )}
+                {plan === "gratuito" && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <span>💡</span>
+                    Faça upgrade para o plano Pro e envie PDFs de até 20MB para gerar cursos mais ricos.
+                  </p>
                 )}
                 <input
                   ref={fileInputRef}
