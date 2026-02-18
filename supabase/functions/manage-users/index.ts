@@ -241,8 +241,10 @@ Deno.serve(async (req) => {
 
         const { error: planError } = await supabaseAdmin
           .from("user_subscriptions")
-          .update({ plan, updated_at: new Date().toISOString() })
-          .eq("user_id", userId);
+          .upsert(
+            { user_id: userId, plan, updated_at: new Date().toISOString() },
+            { onConflict: "user_id" }
+          );
 
         if (planError) {
           return new Response(
