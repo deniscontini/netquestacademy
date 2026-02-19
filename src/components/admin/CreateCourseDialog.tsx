@@ -201,17 +201,21 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       <DialogContent className="w-[95vw] max-w-3xl h-[90vh] !flex !flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-base sm:text-lg">
-            {step === "form" ? "Criar Novo Curso" : "Revisar Estrutura do Curso"}
+            {step === "form" ? "Criar Novo Curso" : step === "generating" ? "Gerando Curso..." : "Revisar Estrutura do Curso"}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
             {step === "form"
               ? "Preencha as informações e use a IA para gerar a estrutura completa com lições, quizzes e laboratórios."
-              : "Revise e edite a estrutura gerada pela IA antes de salvar."}
+              : step === "generating"
+              ? "A IA está criando a estrutura completa do curso. Aguarde..."
+              : "Revise e edite a estrutura gerada pela IA antes de salvar. Clique nas lições para editar o conteúdo."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2 sm:pr-3">
-          {step === "form" ? (
+          {step === "generating" ? (
+            <GenerationProgress currentStep={generationStep} hasPdf={!!form.pdfFile} />
+          ) : step === "form" ? (
             <div className="space-y-3 sm:space-y-4 pb-4">
               {hasReachedCourseLimit && (
                 <Alert variant="destructive">
