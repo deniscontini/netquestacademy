@@ -25,6 +25,7 @@ import {
   useSaveCourse,
 } from "@/hooks/useCreateCourse";
 import CourseContentPreview from "./CourseContentPreview";
+import GenerationProgress, { GenerationStep } from "./GenerationProgress";
 import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits, useAdminCourseCount } from "@/hooks/usePlanLimits";
@@ -36,7 +37,8 @@ interface CreateCourseDialogProps {
 }
 
 const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => {
-  const [step, setStep] = useState<"form" | "preview">("form");
+  const [step, setStep] = useState<"form" | "generating" | "preview">("form");
+  const [generationStep, setGenerationStep] = useState<GenerationStep>("analyzing");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [form, setForm] = useState<CourseFormData>({
     title: "",
@@ -93,18 +95,25 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       return;
     }
 
+    setStep("generating");
+
     try {
       let uploadedPdfUrl: string | undefined;
 
       if (form.pdfFile) {
-        toast.info("📄 Fazendo upload do PDF...");
+        setGenerationStep("uploading");
         const url = await uploadPdfMutation.mutateAsync(form.pdfFile);
         setPdfUrl(url);
         uploadedPdfUrl = url;
-        toast.info("🔍 Processando PDF com IA... Isso pode levar alguns segundos.");
-      } else {
-        toast.info("🔎 Pesquisando melhores fontes e gerando estrutura...");
       }
+
+      setGenerationStep("analyzing");
+      
+      // Simulate progress steps while AI generates everything at once
+      const progressTimer = setTimeout(() => setGenerationStep("generating_modules"), 8000);
+      const progressTimer2 = setTimeout(() => setGenerationStep("generating_lessons"), 20000);
+      const progressTimer3 = setTimeout(() => setGenerationStep("generating_quizzes"), 40000);
+      const progressTimer4 = setTimeout(() => setGenerationStep("generating_labs"), 60000);
 
       const competenciesArray = form.competencies
         ? form.competencies.split(",").map((c) => c.trim()).filter(Boolean)
@@ -126,10 +135,16 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         contentDensity: form.contentDensity || undefined,
       });
 
+      clearTimeout(progressTimer);
+      clearTimeout(progressTimer2);
+      clearTimeout(progressTimer3);
+      clearTimeout(progressTimer4);
+
       setModules(result.modules);
       setStep("preview");
       toast.success("Estrutura gerada com quizzes! Revise antes de salvar.");
     } catch (error: any) {
+      setStep("form");
       toast.error(error.message || "Erro ao gerar conteúdo");
     }
   };
@@ -150,6 +165,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
   const resetForm = () => {
     setStep("form");
+    setGenerationStep("analyzing");
     setForm({
       title: "",
       description: "",
@@ -185,17 +201,21 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       <DialogContent className="w-[95vw] max-w-3xl h-[90vh] !flex !flex-col overflow-hidden p-4 sm:p-6">
         <DialogHeader className="shrink-0">
           <DialogTitle className="text-base sm:text-lg">
-            {step === "form" ? "Criar Novo Curso" : "Revisar Estrutura do Curso"}
+            {step === "form" ? "Criar Novo Curso" : step === "generating" ? "Gerando Curso..." : "Revisar Estrutura do Curso"}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
             {step === "form"
               ? "Preencha as informações e use a IA para gerar a estrutura completa com lições, quizzes e laboratórios."
-              : "Revise e edite a estrutura gerada pela IA antes de salvar."}
+              : step === "generating"
+              ? "A IA está criando a estrutura completa do curso. Aguarde..."
+              : "Revise e edite a estrutura gerada pela IA antes de salvar. Clique nas lições para editar o conteúdo."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2 sm:pr-3">
-          {step === "form" ? (
+          {step === "generating" ? (
+            <GenerationProgress currentStep={generationStep} hasPdf={!!form.pdfFile} />
+          ) : step === "form" ? (
             <div className="space-y-3 sm:space-y-4 pb-4">
               {hasReachedCourseLimit && (
                 <Alert variant="destructive">

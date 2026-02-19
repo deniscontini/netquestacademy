@@ -30,10 +30,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { BookOpen, FlaskConical, Zap, GraduationCap, Plus, Trash2 } from "lucide-react";
+import { BookOpen, FlaskConical, Zap, GraduationCap, Plus, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import CreateCourseDialog from "./CreateCourseDialog";
+import EditCourseDialog from "./EditCourseDialog";
 
 const useLessonsForModules = () => {
   return useQuery({
@@ -95,6 +96,7 @@ const AdminContent = () => {
   const deleteCourse = useDeleteCourse();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const isLoading = coursesLoading || modulesLoading || lessonsLoading || labsLoading;
@@ -159,6 +161,17 @@ const AdminContent = () => {
                             </span>
                           </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditId(course.id);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4 text-primary" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -302,6 +315,9 @@ const AdminContent = () => {
 
       {/* Create Dialog */}
       <CreateCourseDialog open={createOpen} onOpenChange={setCreateOpen} />
+
+      {/* Edit Dialog */}
+      <EditCourseDialog courseId={editId} open={!!editId} onOpenChange={(o) => !o && setEditId(null)} />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>

@@ -19,6 +19,13 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     canShareClasses: false,
     planName: "Gratuito",
   },
+  basico: {
+    maxCourses: 5,
+    maxStudentsPerCourse: 40,
+    maxPdfSizeMB: 10,
+    canShareClasses: true,
+    planName: "Básico",
+  },
   pro: {
     maxCourses: Infinity,
     maxStudentsPerCourse: Infinity,
