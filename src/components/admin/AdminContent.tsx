@@ -167,6 +167,17 @@ const AdminContent = () => {
                           className="h-8 w-8"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setEditId(course.id);
+                          }}
+                        >
+                          <Pencil className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setDeleteId(course.id);
                           }}
                         >
