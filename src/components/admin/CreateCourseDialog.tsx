@@ -95,18 +95,25 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
       return;
     }
 
+    setStep("generating");
+
     try {
       let uploadedPdfUrl: string | undefined;
 
       if (form.pdfFile) {
-        toast.info("📄 Fazendo upload do PDF...");
+        setGenerationStep("uploading");
         const url = await uploadPdfMutation.mutateAsync(form.pdfFile);
         setPdfUrl(url);
         uploadedPdfUrl = url;
-        toast.info("🔍 Processando PDF com IA... Isso pode levar alguns segundos.");
-      } else {
-        toast.info("🔎 Pesquisando melhores fontes e gerando estrutura...");
       }
+
+      setGenerationStep("analyzing");
+      
+      // Simulate progress steps while AI generates everything at once
+      const progressTimer = setTimeout(() => setGenerationStep("generating_modules"), 8000);
+      const progressTimer2 = setTimeout(() => setGenerationStep("generating_lessons"), 20000);
+      const progressTimer3 = setTimeout(() => setGenerationStep("generating_quizzes"), 40000);
+      const progressTimer4 = setTimeout(() => setGenerationStep("generating_labs"), 60000);
 
       const competenciesArray = form.competencies
         ? form.competencies.split(",").map((c) => c.trim()).filter(Boolean)
@@ -128,10 +135,16 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         contentDensity: form.contentDensity || undefined,
       });
 
+      clearTimeout(progressTimer);
+      clearTimeout(progressTimer2);
+      clearTimeout(progressTimer3);
+      clearTimeout(progressTimer4);
+
       setModules(result.modules);
       setStep("preview");
       toast.success("Estrutura gerada com quizzes! Revise antes de salvar.");
     } catch (error: any) {
+      setStep("form");
       toast.error(error.message || "Erro ao gerar conteúdo");
     }
   };
