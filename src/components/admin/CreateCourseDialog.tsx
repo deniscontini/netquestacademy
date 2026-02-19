@@ -25,6 +25,7 @@ import {
   useSaveCourse,
 } from "@/hooks/useCreateCourse";
 import CourseContentPreview from "./CourseContentPreview";
+import GenerationProgress, { GenerationStep } from "./GenerationProgress";
 import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits, useAdminCourseCount } from "@/hooks/usePlanLimits";
