@@ -37,7 +37,8 @@ interface CreateCourseDialogProps {
 }
 
 const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => {
-  const [step, setStep] = useState<"form" | "preview">("form");
+  const [step, setStep] = useState<"form" | "generating" | "preview">("form");
+  const [generationStep, setGenerationStep] = useState<GenerationStep>("analyzing");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [form, setForm] = useState<CourseFormData>({
     title: "",
