@@ -165,6 +165,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
   const resetForm = () => {
     setStep("form");
+    setGenerationStep("analyzing");
     setForm({
       title: "",
       description: "",
