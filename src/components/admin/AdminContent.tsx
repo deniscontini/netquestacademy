@@ -96,6 +96,7 @@ const AdminContent = () => {
   const deleteCourse = useDeleteCourse();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const isLoading = coursesLoading || modulesLoading || lessonsLoading || labsLoading;
