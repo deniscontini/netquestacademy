@@ -316,6 +316,9 @@ const AdminContent = () => {
       {/* Create Dialog */}
       <CreateCourseDialog open={createOpen} onOpenChange={setCreateOpen} />
 
+      {/* Edit Dialog */}
+      <EditCourseDialog courseId={editId} open={!!editId} onOpenChange={(o) => !o && setEditId(null)} />
+
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
