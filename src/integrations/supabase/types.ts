@@ -321,6 +321,42 @@ export type Database = {
           },
         ]
       }
+      payment_orders: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          pagseguro_checkout_id: string | null
+          pagseguro_subscription_id: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          pagseguro_checkout_id?: string | null
+          pagseguro_subscription_id?: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          pagseguro_checkout_id?: string | null
+          pagseguro_subscription_id?: string | null
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -950,7 +986,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "master"
       difficulty_level: "iniciante" | "intermediario" | "avancado"
-      subscription_plan: "gratuito" | "pro" | "enterprise"
+      subscription_plan: "gratuito" | "pro" | "enterprise" | "basico"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1080,7 +1116,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "master"],
       difficulty_level: ["iniciante", "intermediario", "avancado"],
-      subscription_plan: ["gratuito", "pro", "enterprise"],
+      subscription_plan: ["gratuito", "pro", "enterprise", "basico"],
     },
   },
 } as const
