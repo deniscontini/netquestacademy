@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -12,6 +12,7 @@ import AdminContent from "@/components/admin/AdminContent";
 import { Shield } from "lucide-react";
 
 const Admin = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, isLoading: roleLoading } = useIsAdmin();
@@ -65,7 +66,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -74,7 +75,7 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            <AdminOverview />
+            <AdminOverview onNavigate={setActiveTab} />
           </TabsContent>
 
           <TabsContent value="users">

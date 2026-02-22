@@ -14,6 +14,7 @@ import Master from "./pages/Master";
 import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
+import Conquistas from "./pages/Conquistas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/master" element={<Master />} />
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/perfil" element={<Profile />} />
+            <Route path="/conquistas" element={<Conquistas />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

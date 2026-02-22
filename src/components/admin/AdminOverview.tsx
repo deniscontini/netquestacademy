@@ -3,7 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, BookOpen, FlaskConical, Zap, TrendingUp, Award } from "lucide-react";
 
-const AdminOverview = () => {
+interface AdminOverviewProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const AdminOverview = ({ onNavigate }: AdminOverviewProps) => {
   const { data: stats, isLoading } = useAdminStats();
 
   if (isLoading) {
@@ -89,6 +93,7 @@ const AdminOverview = () => {
             <Card
               variant="interactive"
               className="p-4 cursor-pointer hover:border-primary/50"
+              onClick={() => onNavigate?.("users")}
             >
               <div className="flex items-center gap-3">
                 <Users className="w-5 h-5 text-primary" />
@@ -103,6 +108,7 @@ const AdminOverview = () => {
             <Card
               variant="interactive"
               className="p-4 cursor-pointer hover:border-primary/50"
+              onClick={() => onNavigate?.("content")}
             >
               <div className="flex items-center gap-3">
                 <BookOpen className="w-5 h-5 text-accent" />
@@ -117,6 +123,7 @@ const AdminOverview = () => {
             <Card
               variant="interactive"
               className="p-4 cursor-pointer hover:border-primary/50"
+              onClick={() => onNavigate?.("progress")}
             >
               <div className="flex items-center gap-3">
                 <TrendingUp className="w-5 h-5 text-[hsl(200_80%_50%)]" />
