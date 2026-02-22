@@ -66,7 +66,7 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -75,7 +75,7 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="overview">
-            <AdminOverview />
+            <AdminOverview onNavigate={setActiveTab} />
           </TabsContent>
 
           <TabsContent value="users">
