@@ -108,6 +108,7 @@ const AdminOverview = ({ onNavigate }: AdminOverviewProps) => {
             <Card
               variant="interactive"
               className="p-4 cursor-pointer hover:border-primary/50"
+              onClick={() => onNavigate?.("content")}
             >
               <div className="flex items-center gap-3">
                 <BookOpen className="w-5 h-5 text-accent" />
