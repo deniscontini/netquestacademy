@@ -3,7 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, BookOpen, FlaskConical, Zap, TrendingUp, Award } from "lucide-react";
 
-const AdminOverview = () => {
+interface AdminOverviewProps {
+  onNavigate?: (tab: string) => void;
+}
+
+const AdminOverview = ({ onNavigate }: AdminOverviewProps) => {
   const { data: stats, isLoading } = useAdminStats();
 
   if (isLoading) {
