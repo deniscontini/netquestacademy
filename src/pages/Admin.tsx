@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useUserRole";
@@ -12,6 +12,7 @@ import AdminContent from "@/components/admin/AdminContent";
 import { Shield } from "lucide-react";
 
 const Admin = () => {
+  const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, isLoading: roleLoading } = useIsAdmin();
