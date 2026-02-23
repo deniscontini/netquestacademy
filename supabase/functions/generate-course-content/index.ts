@@ -391,7 +391,7 @@ ${density === "detalhado"
     };
 
     const pdfStatus = pdfBase64 ? "yes (base64)" : (hasPdf ? "no (too large)" : "no");
-    console.log(`Generating course content (PDF: ${pdfStatus}, model: google/gemini-2.5-flash)`);
+    console.log(`Generating course content (PDF: ${pdfStatus}, model: ${aiModel}, density: ${density})`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
