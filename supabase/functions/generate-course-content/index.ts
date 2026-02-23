@@ -16,7 +16,18 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
-// Removed arrayBufferToBase64 — no longer downloading PDFs into memory
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunks: string[] = [];
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    chunks.push(String.fromCharCode(...chunk));
+  }
+  return btoa(chunks.join(""));
+}
+
+const MAX_PDF_INLINE_BYTES = 4 * 1024 * 1024; // 4MB max for inline base64
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
