@@ -152,9 +152,9 @@ serve(async (req) => {
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size (no download — pass URL directly to AI) ----
+    // ---- Validate PDF size and optionally download for inline base64 ----
     let hasPdf = false;
-    let validatedPdfUrl: string | null = null;
+    let pdfBase64: string | null = null;
     if (pdfUrl) {
       console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
@@ -170,7 +170,19 @@ serve(async (req) => {
         }
         console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
         hasPdf = true;
-        validatedPdfUrl = pdfUrl;
+
+        // Only download and inline if PDF is small enough for edge function memory
+        if (pdfSizeBytes > 0 && pdfSizeBytes <= MAX_PDF_INLINE_BYTES) {
+          console.log("Downloading PDF for inline base64 (small enough)...");
+          const pdfResponse = await fetch(pdfUrl);
+          if (pdfResponse.ok) {
+            const pdfBuffer = await pdfResponse.arrayBuffer();
+            pdfBase64 = arrayBufferToBase64(pdfBuffer);
+            console.log(`PDF base64 ready: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+          }
+        } else {
+          console.log(`PDF too large for inline (${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB > 4MB). Using text fields only.`);
+        }
       } catch (e) {
         console.error("PDF validation error:", e);
       }
