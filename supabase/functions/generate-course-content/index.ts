@@ -16,14 +16,7 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
+// Removed arrayBufferToBase64 — no longer downloading PDFs into memory
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
