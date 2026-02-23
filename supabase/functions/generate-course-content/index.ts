@@ -301,7 +301,17 @@ Varie os elementos para manter o engajamento. Nunca faça lições com apenas te
 
 ## TOM DE COMUNICAÇÃO: ${tone === "informal" ? "Informal e próximo, use linguagem acessível e exemplos do cotidiano" : tone === "academico" ? "Acadêmico e formal, com rigor técnico e citações" : "Profissional e claro, equilibrando acessibilidade com rigor técnico"}
 
-## DENSIDADE DE CONTEÚDO: ${density === "resumido" ? "Foque nos conceitos essenciais, seja direto e conciso (mínimo 1000 palavras por lição)" : density === "detalhado" ? "Seja extremamente detalhado, com muitos exemplos e explicações aprofundadas (mínimo 2000 palavras por lição)" : "Equilíbrio entre profundidade e objetividade (mínimo 1500 palavras por lição)"}
+## DENSIDADE DE CONTEÚDO: ${density === "resumido" ? "Foque nos conceitos essenciais, seja direto e conciso (mínimo 1000 palavras por lição). Gere 3-5 módulos com 2-3 lições cada." : density === "detalhado" ? `MODO DETALHADO / APROFUNDADO — REQUISITOS MÁXIMOS:
+- Cada lição DEVE ter NO MÍNIMO 2500 palavras de conteúdo rico e aprofundado
+- Gere entre 5 e 8 módulos com 4-6 lições cada
+- Cada módulo DEVE ter 2-3 laboratórios práticos
+- Cada lição DEVE ter 4-5 questões de quiz
+- Use TODOS os elementos interativos: flashcards (:::card), abas (:::tabs), tabelas comparativas, blocos de código, listas numeradas
+- Inclua fundamentação teórica extensa, múltiplos exemplos práticos, estudos de caso, cenários reais
+- Adicione seções de "Aprofundamento" com conceitos avançados
+- Inclua analogias, diagramas textuais e explicações passo-a-passo
+- Cada lição deve ter pelo menos 3 caixas de destaque (💡 Dica, ⚠️ Atenção, 🔑 Conceito-chave)
+- NÃO ECONOMIZE NO CONTEÚDO — este modo é para cursos completos e profissionais` : "Equilíbrio entre profundidade e objetividade (mínimo 1500 palavras por lição). Gere 4-6 módulos com 3-4 lições cada."}
 
 ## GAMIFICAÇÃO (Nível: ${gamifLevel})
 ${gamifLevel === "baixo"
@@ -311,7 +321,7 @@ ${gamifLevel === "baixo"
   : "- XP equilibrado: lições = 30-50 XP fixo, quizzes = 10-20 XP por questão, labs = 80-120 XP\n- Badges por marcos de conclusão e competências\n- Desafios práticos nos labs"}
 
 ## QUIZZES (OBRIGATÓRIO)
-Para cada lição, gere de 3 a 5 questões de quiz com:
+Para cada lição, gere de ${density === "detalhado" ? "4 a 5" : "3 a 5"} questões de quiz com:
 - Pergunta clara e objetiva
 - 4 opções de resposta (apenas 1 correta)
 - Cada opção com id único (formato: "opt_X")
@@ -331,14 +341,16 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
 - **NÃO gerar conteúdo fora do escopo educacional.** Todo o conteúdo deve estar estritamente relacionado ao tema do curso informado. Não extrapole para áreas não solicitadas.
 - **NÃO assumir conhecimento fora das entradas fornecidas.** Baseie-se exclusivamente no título, descrição, ementa, conteúdo programático, bibliografia, PDF fornecido e seu conhecimento técnico especializado.
 
-## REGRAS OBRIGATÓRIAS
+## REGRAS OBRIGATÓRIAS DE QUANTIDADE
 - Gerar conteúdo em português (pt-BR)
 - Nunca copiar conteúdo literal de materiais de referência — reescrever com originalidade
 - Manter coerência pedagógica entre módulos
 - Distribuir dificuldade progressivamente
-- Cada módulo deve ter 3-5 lições e 1-3 labs
-- Gerar 3-8 módulos dependendo da complexidade
-- Cada lição deve ter NO MÍNIMO 1500 palavras de conteúdo rico e aprofundado`;
+${density === "detalhado" 
+  ? "- Cada módulo deve ter 4-6 lições e 2-3 labs\n- Gerar 5-8 módulos\n- Cada lição deve ter NO MÍNIMO 2500 palavras" 
+  : density === "resumido"
+  ? "- Cada módulo deve ter 2-3 lições e 1 lab\n- Gerar 3-5 módulos\n- Cada lição deve ter NO MÍNIMO 1000 palavras"
+  : "- Cada módulo deve ter 3-5 lições e 1-3 labs\n- Gerar 4-6 módulos\n- Cada lição deve ter NO MÍNIMO 1500 palavras"}`;
 
     // ---- Build user prompt ----
     let userPrompt = `Crie a estrutura completa do curso EaD dinâmico e gamificado:
