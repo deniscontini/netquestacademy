@@ -355,25 +355,28 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
     }
 
-    // Build message parts — pass PDF URL directly (no memory-heavy download)
+    // Build message parts — use base64 data URL for small PDFs
     const userParts: any[] = [{ type: "text", text: userPrompt }];
 
-    if (hasPdf && validatedPdfUrl) {
+    if (hasPdf && pdfBase64) {
       userParts.push({
         type: "image_url",
         image_url: {
-          url: validatedPdfUrl,
+          url: `data:application/pdf;base64,${pdfBase64}`,
         },
       });
-      console.log("PDF URL passed directly to AI (no download)");
+      console.log("PDF attached as inline base64 data URL");
+    } else if (hasPdf) {
+      console.log("PDF too large for inline — AI will use text fields only");
     }
 
     const userMessage = {
       role: "user",
-      content: hasPdf ? userParts : userPrompt,
+      content: (hasPdf && pdfBase64) ? userParts : userPrompt,
     };
 
-    console.log(`Generating course content (PDF: ${hasPdf ? "yes (URL)" : "no"}, model: google/gemini-2.5-flash)`);
+    const pdfStatus = pdfBase64 ? "yes (base64)" : (hasPdf ? "no (too large)" : "no");
+    console.log(`Generating course content (PDF: ${pdfStatus}, model: google/gemini-2.5-flash)`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
