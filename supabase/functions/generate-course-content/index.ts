@@ -141,9 +141,9 @@ serve(async (req) => {
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size and download content ----
-    let pdfBase64: string | null = null;
+    // ---- Validate PDF size (no download — pass URL directly to AI) ----
     let hasPdf = false;
+    let validatedPdfUrl: string | null = null;
     if (pdfUrl) {
       console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
@@ -158,20 +158,10 @@ serve(async (req) => {
           );
         }
         console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
-
-        // Download the PDF and convert to base64 for the AI
-        console.log("Downloading PDF for AI processing...");
-        const pdfResponse = await fetch(pdfUrl);
-        if (pdfResponse.ok) {
-          const pdfBuffer = await pdfResponse.arrayBuffer();
-          pdfBase64 = arrayBufferToBase64(pdfBuffer);
-          hasPdf = true;
-          console.log(`PDF downloaded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB, base64 length: ${pdfBase64.length}`);
-        } else {
-          console.error("Failed to download PDF:", pdfResponse.status);
-        }
+        hasPdf = true;
+        validatedPdfUrl = pdfUrl;
       } catch (e) {
-        console.error("PDF processing error:", e);
+        console.error("PDF validation error:", e);
       }
     }
 
