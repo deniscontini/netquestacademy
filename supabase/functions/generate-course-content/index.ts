@@ -193,6 +193,9 @@ serve(async (req) => {
     const tone = communicationTone || "profissional";
     const density = contentDensity || "normal";
 
+    // Use a more powerful model for detailed content
+    const aiModel = density === "detalhado" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
     const pdfInstructions = hasPdf
       ? `## INSTRUÇÃO PRIORITÁRIA — MATERIAL DE REFERÊNCIA (PDF)
 
