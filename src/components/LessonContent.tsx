@@ -402,8 +402,29 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
       }
       const linkMatch = part.match(/\[([^\]]+)\]\(([^)]+)\)/);
       if (linkMatch) {
+        const linkUrl = linkMatch[2];
+        // Check if it's a YouTube link and render as embedded video
+        const ytMatch = linkUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
+        if (ytMatch) {
+          return (
+            <div key={i} className="my-4 rounded-lg overflow-hidden border">
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0`}
+                  title={linkMatch[1]}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+              <div className="px-3 py-2 bg-muted/30 text-xs text-muted-foreground">
+                🎬 {linkMatch[1]}
+              </div>
+            </div>
+          );
+        }
         return (
-          <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a key={i} href={linkUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
             {linkMatch[1]}
           </a>
         );

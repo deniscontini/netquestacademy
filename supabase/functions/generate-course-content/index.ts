@@ -16,6 +16,15 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -132,14 +141,16 @@ serve(async (req) => {
     // ---- PDF size limits per plan ----
     const PDF_LIMITS: Record<string, number> = {
       gratuito: 5 * 1024 * 1024,   // 5MB
+      basico: 10 * 1024 * 1024,    // 10MB
       pro: 20 * 1024 * 1024,       // 20MB
       enterprise: 20 * 1024 * 1024, // 20MB
     };
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size via HEAD request (no download needed) ----
-    let validatedPdfUrl: string | null = null;
+    // ---- Validate PDF size and download content ----
+    let pdfBase64: string | null = null;
+    let hasPdf = false;
     if (pdfUrl) {
       console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
@@ -153,12 +164,21 @@ serve(async (req) => {
             }
           );
         }
-        validatedPdfUrl = pdfUrl;
         console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
+
+        // Download the PDF and convert to base64 for the AI
+        console.log("Downloading PDF for AI processing...");
+        const pdfResponse = await fetch(pdfUrl);
+        if (pdfResponse.ok) {
+          const pdfBuffer = await pdfResponse.arrayBuffer();
+          pdfBase64 = arrayBufferToBase64(pdfBuffer);
+          hasPdf = true;
+          console.log(`PDF downloaded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB, base64 length: ${pdfBase64.length}`);
+        } else {
+          console.error("Failed to download PDF:", pdfResponse.status);
+        }
       } catch (e) {
-        console.error("PDF size check error:", e);
-        // Allow to proceed without PDF if check fails
-        validatedPdfUrl = null;
+        console.error("PDF processing error:", e);
       }
     }
 
@@ -166,6 +186,29 @@ serve(async (req) => {
     const gamifLevel = gamificationLevel || "medio";
     const tone = communicationTone || "profissional";
     const density = contentDensity || "normal";
+
+    const pdfInstructions = hasPdf
+      ? `## INSTRUÇÃO PRIORITÁRIA — MATERIAL DE REFERÊNCIA (PDF)
+
+O administrador forneceu um **documento PDF de referência** que é a BASE PRINCIPAL para a geração do curso. Você DEVE:
+
+1. **ANALISAR O PDF INTEGRALMENTE** — Leia e compreenda todo o conteúdo do documento
+2. **EXTRAIR os conceitos, definições, exemplos e estrutura** do PDF para fundamentar cada lição
+3. **SEGUIR a organização temática** do PDF como guia principal para a sequência dos módulos
+4. **USAR os termos técnicos, definições e explicações** do PDF como base, reescrevendo com originalidade
+5. **APROFUNDAR o conteúdo do PDF** — não resuma superficialmente; expanda cada tópico com detalhes, exemplos práticos e contexto adicional
+6. **REFERENCIAR conceitos específicos** do PDF dentro das lições (ex: "Conforme abordado no material de referência...")
+7. **NUNCA copiar literalmente** — reescreva sempre com suas próprias palavras mantendo a essência e profundidade
+
+⚠️ O PDF é sua fonte PRIMÁRIA. Os campos de ementa, bibliografia e conteúdo programático são COMPLEMENTARES. Em caso de conflito, priorize o conteúdo do PDF.`
+      : `## FONTES E REFERÊNCIAS (SEM PDF)
+Como não há documento de referência anexado, você DEVE:
+- Basear o conteúdo nas melhores referências acadêmicas e técnicas conhecidas sobre o tema
+- Citar autores, livros e obras de referência relevantes dentro do conteúdo das lições
+- Incluir links para recursos gratuitos e abertos (RFCs, documentação oficial, tutoriais consagrados)
+- Ao final de cada lição, adicionar:
+  ### 📚 Referências e Leitura Complementar
+  Com fontes reais e verificáveis`;
 
     const systemPrompt = `Você é um especialista em design instrucional EaD, gamificação educacional e estruturação de cursos digitais para plataformas SaaS multi-tenant.
 
@@ -176,9 +219,11 @@ Sua missão é criar uma estrutura completa de curso EaD dinâmico e gamificado 
 Você está gerando conteúdo para uma **plataforma educacional SaaS multi-tenant**. Cada tenant representa um cliente independente. Considere:
 - Cursos são gerados automaticamente dentro do ambiente do tenant
 - Conteúdos devem ser **100% originais**, sem plágio ou cópia direta
-- O material enviado pelo usuário (PDF, ementa, bibliografia) serve **apenas como referência conceitual** — nunca copie literalmente
+- O material enviado pelo usuário (PDF, ementa, bibliografia) serve como **referência conceitual principal** — nunca copie literalmente, mas baseie-se fortemente nele
 - A plataforma possui suporte nativo a: videoaulas, quizzes interativos, flashcards, cards educacionais, desafios gamificados, trilhas de aprendizagem, microlearning e avaliações automáticas
 - Utilize os recursos da plataforma de forma intencional e variada para maximizar o engajamento
+
+${pdfInstructions}
 
 ## PRINCÍPIOS PEDAGÓGICOS OBRIGATÓRIOS
 
@@ -190,7 +235,14 @@ Você está gerando conteúdo para uma **plataforma educacional SaaS multi-tenan
 
 ## REGRAS DE CONTEÚDO DAS LIÇÕES (CRÍTICO)
 
-O conteúdo de cada lição DEVE ser rico (mínimo 800 palavras), profissional e dinâmico.
+O conteúdo de cada lição DEVE ser **denso, profundo e extenso** — mínimo **1500 palavras por lição**.
+Cada lição deve cobrir o tópico com profundidade acadêmica, incluindo:
+- Fundamentação teórica detalhada com definições precisas
+- Múltiplos exemplos práticos e casos de uso reais
+- Analogias e comparações para facilitar a compreensão
+- Contexto histórico ou evolução do conceito quando relevante
+- Relação com outros tópicos do curso
+
 Use as seguintes convenções em markdown:
 
 1. **Caixas de destaque** — blockquotes com emojis:
@@ -219,9 +271,17 @@ Use as seguintes convenções em markdown:
 4. **Tabelas comparativas** — para confrontar conceitos
 5. **Listas de passos** — procedimentos numerados com sub-itens
 6. **Blocos de código** — com linguagem especificada para exemplos técnicos
-7. **Seção de vídeos** — ao final:
+
+7. **Seção de vídeos** — OBRIGATÓRIO ao final de cada lição. Inclua 2-3 vídeos reais do YouTube sobre o tema, preferencialmente em português:
    ### 🎬 Recursos Multimídia
-   📺 **[Título do Vídeo](URL)** (duração)
+   📺 **[Título Real do Vídeo](https://www.youtube.com/watch?v=ID_REAL)** (duração estimada)
+   
+   IMPORTANTE: Use APENAS URLs reais e válidas do YouTube. Use vídeos conhecidos de canais educacionais brasileiros como:
+   - Curso em Vídeo (Gustavo Guanabara)
+   - Boson Treinamentos
+   - Univesp
+   - Hardware Redes Brasil
+   - Outros canais educacionais relevantes ao tema
 
 8. **Resumo visual** — encerrar cada lição:
    ### 📋 Resumo da Lição
@@ -232,7 +292,7 @@ Varie os elementos para manter o engajamento. Nunca faça lições com apenas te
 
 ## TOM DE COMUNICAÇÃO: ${tone === "informal" ? "Informal e próximo, use linguagem acessível e exemplos do cotidiano" : tone === "academico" ? "Acadêmico e formal, com rigor técnico e citações" : "Profissional e claro, equilibrando acessibilidade com rigor técnico"}
 
-## DENSIDADE DE CONTEÚDO: ${density === "resumido" ? "Foque nos conceitos essenciais, seja direto e conciso" : density === "detalhado" ? "Seja extremamente detalhado, com muitos exemplos e explicações aprofundadas" : "Equilíbrio entre profundidade e objetividade"}
+## DENSIDADE DE CONTEÚDO: ${density === "resumido" ? "Foque nos conceitos essenciais, seja direto e conciso (mínimo 1000 palavras por lição)" : density === "detalhado" ? "Seja extremamente detalhado, com muitos exemplos e explicações aprofundadas (mínimo 2000 palavras por lição)" : "Equilíbrio entre profundidade e objetividade (mínimo 1500 palavras por lição)"}
 
 ## GAMIFICAÇÃO (Nível: ${gamifLevel})
 ${gamifLevel === "baixo"
@@ -260,15 +320,16 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
 - **NÃO gerar código executável nos laboratórios práticos.** Os labs devem conter apenas comandos conceituais ou de verificação (ex: comandos de terminal, consultas, configurações), nunca scripts completos, programas ou trechos de código que possam ser executados como software.
 - **NÃO gerar interfaces visuais.** Não inclua HTML, CSS, componentes de UI, wireframes ou qualquer representação de interface gráfica no conteúdo.
 - **NÃO gerar conteúdo fora do escopo educacional.** Todo o conteúdo deve estar estritamente relacionado ao tema do curso informado. Não extrapole para áreas não solicitadas.
-- **NÃO assumir conhecimento fora das entradas fornecidas.** Baseie-se exclusivamente no título, descrição, ementa, conteúdo programático, bibliografia e PDF fornecidos. Se uma informação não foi fornecida, não a invente — indique como "a ser definido pelo instrutor" quando necessário.
+- **NÃO assumir conhecimento fora das entradas fornecidas.** Baseie-se exclusivamente no título, descrição, ementa, conteúdo programático, bibliografia, PDF fornecido e seu conhecimento técnico especializado.
 
 ## REGRAS OBRIGATÓRIAS
 - Gerar conteúdo em português (pt-BR)
 - Nunca copiar conteúdo literal de materiais de referência — reescrever com originalidade
 - Manter coerência pedagógica entre módulos
 - Distribuir dificuldade progressivamente
-- Cada módulo deve ter 2-5 lições e 1-3 labs
-- Gerar 3-8 módulos dependendo da complexidade`;
+- Cada módulo deve ter 3-5 lições e 1-3 labs
+- Gerar 3-8 módulos dependendo da complexidade
+- Cada lição deve ter NO MÍNIMO 1500 palavras de conteúdo rico e aprofundado`;
 
     // ---- Build user prompt ----
     let userPrompt = `Crie a estrutura completa do curso EaD dinâmico e gamificado:
@@ -284,25 +345,29 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
     if (curriculum) userPrompt += `\n**Conteúdo Programático:** ${curriculum}`;
     if (bibliography) userPrompt += `\n**Bibliografia:** ${bibliography}`;
 
-    if (validatedPdfUrl) {
-      userPrompt += `\n\n**IMPORTANTE:** O administrador forneceu um documento PDF de referência (${validatedPdfUrl}). Com base na ementa, conteúdo programático e bibliografia fornecidos acima — que refletem o conteúdo desse documento — gere o material do curso de forma original. NUNCA copie literalmente; reescreva com originalidade mantendo a essência pedagógica.`;
-    } else {
-      userPrompt += `\n\n**IMPORTANTE — Fontes e Referências:**
-Como não há documento de referência anexado, você DEVE:
-- Basear o conteúdo nas melhores referências acadêmicas e técnicas conhecidas sobre o tema
-- Citar autores, livros e obras de referência relevantes dentro do conteúdo das lições
-- Incluir links para recursos gratuitos e abertos (RFCs, documentação oficial, tutoriais consagrados)
-- Ao final de cada lição, adicionar:
-  ### 📚 Referências e Leitura Complementar
-  Com fontes reais e verificáveis`;
+    if (hasPdf) {
+      userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
     }
 
-    // Build message — text only. Sending binary PDF data (even base64) causes
-    // "The document has no pages" errors when the file is truncated due to memory limits.
-    // The structured text fields (syllabus, curriculum, bibliography) already carry
-    // the semantic content needed for high-quality course generation.
-    const userMessage = { role: "user", content: userPrompt };
-    console.log(`Generating course content (PDF reference: ${validatedPdfUrl ? "yes (text-only mode)" : "no"})`);
+    // Build message parts — include PDF as inline_data if available
+    const userParts: any[] = [{ type: "text", text: userPrompt }];
+
+    if (hasPdf && pdfBase64) {
+      userParts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:application/pdf;base64,${pdfBase64}`,
+        },
+      });
+      console.log("PDF attached as inline data for AI processing");
+    }
+
+    const userMessage = {
+      role: "user",
+      content: hasPdf ? userParts : userPrompt,
+    };
+
+    console.log(`Generating course content (PDF attached: ${hasPdf ? "yes (inline)" : "no"}, model: google/gemini-2.5-pro)`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -313,7 +378,7 @@ Como não há documento de referência anexado, você DEVE:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.5-pro",
           messages: [
             { role: "system", content: systemPrompt },
             userMessage,
