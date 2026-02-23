@@ -16,7 +16,18 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
-// Removed arrayBufferToBase64 — no longer downloading PDFs into memory
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunks: string[] = [];
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    chunks.push(String.fromCharCode(...chunk));
+  }
+  return btoa(chunks.join(""));
+}
+
+const MAX_PDF_INLINE_BYTES = 4 * 1024 * 1024; // 4MB max for inline base64
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -141,9 +152,9 @@ serve(async (req) => {
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size (no download — pass URL directly to AI) ----
+    // ---- Validate PDF size and optionally download for inline base64 ----
     let hasPdf = false;
-    let validatedPdfUrl: string | null = null;
+    let pdfBase64: string | null = null;
     if (pdfUrl) {
       console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
@@ -159,7 +170,19 @@ serve(async (req) => {
         }
         console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
         hasPdf = true;
-        validatedPdfUrl = pdfUrl;
+
+        // Only download and inline if PDF is small enough for edge function memory
+        if (pdfSizeBytes > 0 && pdfSizeBytes <= MAX_PDF_INLINE_BYTES) {
+          console.log("Downloading PDF for inline base64 (small enough)...");
+          const pdfResponse = await fetch(pdfUrl);
+          if (pdfResponse.ok) {
+            const pdfBuffer = await pdfResponse.arrayBuffer();
+            pdfBase64 = arrayBufferToBase64(pdfBuffer);
+            console.log(`PDF base64 ready: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
+          }
+        } else {
+          console.log(`PDF too large for inline (${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB > 4MB). Using text fields only.`);
+        }
       } catch (e) {
         console.error("PDF validation error:", e);
       }
@@ -332,25 +355,28 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
     }
 
-    // Build message parts — pass PDF URL directly (no memory-heavy download)
+    // Build message parts — use base64 data URL for small PDFs
     const userParts: any[] = [{ type: "text", text: userPrompt }];
 
-    if (hasPdf && validatedPdfUrl) {
+    if (hasPdf && pdfBase64) {
       userParts.push({
         type: "image_url",
         image_url: {
-          url: validatedPdfUrl,
+          url: `data:application/pdf;base64,${pdfBase64}`,
         },
       });
-      console.log("PDF URL passed directly to AI (no download)");
+      console.log("PDF attached as inline base64 data URL");
+    } else if (hasPdf) {
+      console.log("PDF too large for inline — AI will use text fields only");
     }
 
     const userMessage = {
       role: "user",
-      content: hasPdf ? userParts : userPrompt,
+      content: (hasPdf && pdfBase64) ? userParts : userPrompt,
     };
 
-    console.log(`Generating course content (PDF: ${hasPdf ? "yes (URL)" : "no"}, model: google/gemini-2.5-flash)`);
+    const pdfStatus = pdfBase64 ? "yes (base64)" : (hasPdf ? "no (too large)" : "no");
+    console.log(`Generating course content (PDF: ${pdfStatus}, model: google/gemini-2.5-flash)`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
