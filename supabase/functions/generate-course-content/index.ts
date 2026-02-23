@@ -16,14 +16,7 @@ async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   return 0;
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
+// Removed arrayBufferToBase64 — no longer downloading PDFs into memory
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -148,9 +141,9 @@ serve(async (req) => {
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size and download content ----
-    let pdfBase64: string | null = null;
+    // ---- Validate PDF size (no download — pass URL directly to AI) ----
     let hasPdf = false;
+    let validatedPdfUrl: string | null = null;
     if (pdfUrl) {
       console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
@@ -165,20 +158,10 @@ serve(async (req) => {
           );
         }
         console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
-
-        // Download the PDF and convert to base64 for the AI
-        console.log("Downloading PDF for AI processing...");
-        const pdfResponse = await fetch(pdfUrl);
-        if (pdfResponse.ok) {
-          const pdfBuffer = await pdfResponse.arrayBuffer();
-          pdfBase64 = arrayBufferToBase64(pdfBuffer);
-          hasPdf = true;
-          console.log(`PDF downloaded: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB, base64 length: ${pdfBase64.length}`);
-        } else {
-          console.error("Failed to download PDF:", pdfResponse.status);
-        }
+        hasPdf = true;
+        validatedPdfUrl = pdfUrl;
       } catch (e) {
-        console.error("PDF processing error:", e);
+        console.error("PDF validation error:", e);
       }
     }
 
@@ -349,17 +332,17 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
     }
 
-    // Build message parts — include PDF as inline_data if available
+    // Build message parts — pass PDF URL directly (no memory-heavy download)
     const userParts: any[] = [{ type: "text", text: userPrompt }];
 
-    if (hasPdf && pdfBase64) {
+    if (hasPdf && validatedPdfUrl) {
       userParts.push({
         type: "image_url",
         image_url: {
-          url: `data:application/pdf;base64,${pdfBase64}`,
+          url: validatedPdfUrl,
         },
       });
-      console.log("PDF attached as inline data for AI processing");
+      console.log("PDF URL passed directly to AI (no download)");
     }
 
     const userMessage = {
@@ -367,7 +350,7 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       content: hasPdf ? userParts : userPrompt,
     };
 
-    console.log(`Generating course content (PDF attached: ${hasPdf ? "yes (inline)" : "no"}, model: google/gemini-2.5-pro)`);
+    console.log(`Generating course content (PDF: ${hasPdf ? "yes (URL)" : "no"}, model: google/gemini-2.5-flash)`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -378,7 +361,7 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             userMessage,
