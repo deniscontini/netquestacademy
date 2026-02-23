@@ -332,17 +332,17 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
     }
 
-    // Build message parts — include PDF as inline_data if available
+    // Build message parts — pass PDF URL directly (no memory-heavy download)
     const userParts: any[] = [{ type: "text", text: userPrompt }];
 
-    if (hasPdf && pdfBase64) {
+    if (hasPdf && validatedPdfUrl) {
       userParts.push({
         type: "image_url",
         image_url: {
-          url: `data:application/pdf;base64,${pdfBase64}`,
+          url: validatedPdfUrl,
         },
       });
-      console.log("PDF attached as inline data for AI processing");
+      console.log("PDF URL passed directly to AI (no download)");
     }
 
     const userMessage = {
@@ -350,7 +350,7 @@ Para cada lição, gere de 3 a 5 questões de quiz com:
       content: hasPdf ? userParts : userPrompt,
     };
 
-    console.log(`Generating course content (PDF attached: ${hasPdf ? "yes (inline)" : "no"}, model: google/gemini-2.5-pro)`);
+    console.log(`Generating course content (PDF: ${hasPdf ? "yes (URL)" : "no"}, model: google/gemini-2.5-flash)`);
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
