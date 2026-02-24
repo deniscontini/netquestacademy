@@ -65,6 +65,12 @@ const DashboardNavbar = () => {
             >
               Ranking
             </a>
+            <a 
+              href="/certificados" 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Certificados
+            </a>
           </div>
 
           {/* User Menu */}
