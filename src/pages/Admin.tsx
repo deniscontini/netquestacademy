@@ -68,11 +68,15 @@ const Admin = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="progress">Progresso</TabsTrigger>
             <TabsTrigger value="content">Conteúdo</TabsTrigger>
+            <TabsTrigger value="certificates" className="gap-1">
+              <Award className="w-3 h-3" />
+              Certificados
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
