@@ -57,7 +57,7 @@ const AdminCertificates = () => {
   const { data: templates, isLoading: templatesLoading } = useCertificateTemplates();
   const { data: certificates, isLoading: certsLoading } = useAdminCertificates();
   const { data: courses } = useCourses();
-  const { students } = useAdminData();
+  const { data: students } = useAdminUsers();
   const saveTemplate = useSaveCertificateTemplate();
   const deleteTemplate = useDeleteCertificateTemplate();
   const issueCert = useIssueCertificate();
