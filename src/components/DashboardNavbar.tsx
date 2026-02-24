@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LogOut, User, ChevronDown, Shield, Crown } from "lucide-react";
+import { GraduationCap, LogOut, User, ChevronDown, Shield, Crown, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -64,6 +64,12 @@ const DashboardNavbar = () => {
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Ranking
+            </a>
+            <a 
+              href="/certificados" 
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Certificados
             </a>
           </div>
 

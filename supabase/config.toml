@@ -2,3 +2,6 @@ project_id = "tqyssjjonibcuxwibnak"
 
 [functions.generate-course-content]
 verify_jwt = false
+
+[functions.generate-certificate]
+verify_jwt = false
