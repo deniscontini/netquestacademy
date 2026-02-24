@@ -9,7 +9,8 @@ import AdminOverview from "@/components/admin/AdminOverview";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminProgress from "@/components/admin/AdminProgress";
 import AdminContent from "@/components/admin/AdminContent";
-import { Shield } from "lucide-react";
+import AdminCertificates from "@/components/admin/AdminCertificates";
+import { Shield, Award } from "lucide-react";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState("overview");
