@@ -15,6 +15,7 @@ import Ranking from "./pages/Ranking";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import Conquistas from "./pages/Conquistas";
+import Certificados from "./pages/Certificados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
