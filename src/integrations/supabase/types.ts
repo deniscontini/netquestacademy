@@ -74,6 +74,131 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_templates: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          course_id: string | null
+          created_at: string
+          font_family: string | null
+          footer_text: string | null
+          id: string
+          is_default: boolean
+          logo_url: string | null
+          owner_id: string
+          primary_color: string | null
+          signature_name: string | null
+          signature_title: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          course_id?: string | null
+          created_at?: string
+          font_family?: string | null
+          footer_text?: string | null
+          id?: string
+          is_default?: boolean
+          logo_url?: string | null
+          owner_id: string
+          primary_color?: string | null
+          signature_name?: string | null
+          signature_title?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          course_id?: string | null
+          created_at?: string
+          font_family?: string | null
+          footer_text?: string | null
+          id?: string
+          is_default?: boolean
+          logo_url?: string | null
+          owner_id?: string
+          primary_color?: string | null
+          signature_name?: string | null
+          signature_title?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_templates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          certificate_code: string
+          completion_date: string
+          course_id: string
+          course_title: string
+          created_at: string
+          id: string
+          issued_at: string
+          issued_by: string
+          pdf_url: string | null
+          student_name: string
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          certificate_code?: string
+          completion_date?: string
+          course_id: string
+          course_title: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by: string
+          pdf_url?: string | null
+          student_name: string
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          certificate_code?: string
+          completion_date?: string
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          id?: string
+          issued_at?: string
+          issued_by?: string
+          pdf_url?: string | null
+          student_name?: string
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           bibliography: string | null
