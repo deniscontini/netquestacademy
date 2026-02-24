@@ -107,7 +107,7 @@ const AdminCertificates = () => {
   };
 
   const handleIssueCertificate = () => {
-    const student = students?.find((s: any) => s.student_id === issueForm.userId);
+    const student = students?.find((s: any) => s.user_id === issueForm.userId);
     const course = courses?.find((c) => c.id === issueForm.courseId);
     if (!student || !course) {
       toast.error("Selecione aluno e curso.");
