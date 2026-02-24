@@ -38,6 +38,7 @@ const App = () => (
             <Route path="/ranking" element={<Ranking />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/conquistas" element={<Conquistas />} />
+            <Route path="/certificados" element={<Certificados />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

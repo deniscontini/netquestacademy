@@ -468,8 +468,8 @@ const AdminCertificates = () => {
                 <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
                 <SelectContent>
                   {students?.map((s: any) => (
-                    <SelectItem key={s.student_id} value={s.student_id}>
-                      {s.profiles?.full_name || s.profiles?.username || s.student_id}
+                    <SelectItem key={s.user_id} value={s.user_id}>
+                      {s.full_name || s.username || s.user_id}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -94,6 +94,10 @@ const Admin = () => {
           <TabsContent value="content">
             <AdminContent />
           </TabsContent>
+
+          <TabsContent value="certificates">
+            <AdminCertificates />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
