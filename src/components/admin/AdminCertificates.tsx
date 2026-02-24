@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Award, Plus, Palette, Send, Trash2, Lock, Download } from "lucide-react";
 import { useCourses } from "@/hooks/useCourses";
-import { useAdminData } from "@/hooks/useAdminData";
+import { useAdminUsers } from "@/hooks/useAdminData";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import {
   useCertificateTemplates,
