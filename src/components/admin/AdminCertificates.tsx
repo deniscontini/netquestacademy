@@ -117,7 +117,7 @@ const AdminCertificates = () => {
       {
         userId: issueForm.userId,
         courseId: issueForm.courseId,
-        studentName: student.profiles?.full_name || student.profiles?.username || "Aluno",
+        studentName: student.full_name || student.username || "Aluno",
         courseTitle: course.title,
         templateId: issueForm.templateId || undefined,
       },
