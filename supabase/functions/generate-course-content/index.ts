@@ -7,6 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ── Helpers ──────────────────────────────────────────────────────────────
+
 async function getPdfSizeBytes(pdfUrl: string): Promise<number> {
   try {
     const headResponse = await fetch(pdfUrl, { method: "HEAD" });
@@ -27,7 +29,234 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(chunks.join(""));
 }
 
-const MAX_PDF_INLINE_BYTES = 4 * 1024 * 1024; // 4MB max for inline base64
+const MAX_PDF_INLINE_BYTES = 4 * 1024 * 1024;
+
+/** Call Lovable AI gateway (non-streaming) with tool_calls */
+async function callAI(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userMessage: any,
+  tools?: any[],
+  toolChoice?: any,
+  maxTokens = 8192,
+): Promise<any> {
+  const body: any = {
+    model,
+    max_tokens: maxTokens,
+    messages: [
+      { role: "system", content: systemPrompt },
+      typeof userMessage === "string"
+        ? { role: "user", content: userMessage }
+        : userMessage,
+    ],
+  };
+  if (tools) body.tools = tools;
+  if (toolChoice) body.tool_choice = toolChoice;
+
+  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const status = resp.status;
+    const text = await resp.text();
+    console.error(`AI error ${status}:`, text.substring(0, 300));
+    throw new Error(
+      status === 429
+        ? "RATE_LIMIT"
+        : status === 402
+        ? "NO_CREDITS"
+        : `AI_ERROR_${status}`,
+    );
+  }
+
+  const data = await resp.json();
+  return data;
+}
+
+/** Extract structured JSON from AI response (tool_calls > content fallback) */
+function extractJSON(aiData: any): any {
+  const message = aiData.choices?.[0]?.message;
+  const toolCall = message?.tool_calls?.[0];
+
+  // Try tool_calls first
+  if (toolCall?.function?.arguments) {
+    try {
+      return JSON.parse(toolCall.function.arguments);
+    } catch (e) {
+      console.error("Tool call parse failed, trying repair...");
+      return repairAndParse(toolCall.function.arguments);
+    }
+  }
+
+  // Fallback: extract from content
+  if (message?.content) {
+    const content = typeof message.content === "string" ? message.content : JSON.stringify(message.content);
+    let cleaned = content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+    const jsonStart = cleaned.search(/[\{\[]/);
+    if (jsonStart !== -1) {
+      try {
+        return JSON.parse(cleaned.substring(jsonStart));
+      } catch {
+        return repairAndParse(cleaned.substring(jsonStart));
+      }
+    }
+  }
+
+  console.error("No valid JSON in AI response:", JSON.stringify(message).substring(0, 500));
+  throw new Error("AI_NO_JSON");
+}
+
+function repairAndParse(raw: string): any {
+  let repaired = raw
+    .replace(/,\s*}/g, "}")
+    .replace(/,\s*]/g, "]")
+    .replace(/[\x00-\x1F\x7F]/g, (ch) => (ch === "\n" || ch === "\r" || ch === "\t" ? ch : ""));
+
+  // Balance brackets
+  const lastBrace = repaired.lastIndexOf("}");
+  if (lastBrace > 0) repaired = repaired.substring(0, lastBrace + 1);
+
+  let braces = 0, brackets = 0;
+  for (const char of repaired) {
+    if (char === "{") braces++;
+    if (char === "}") braces--;
+    if (char === "[") brackets++;
+    if (char === "]") brackets--;
+  }
+  while (brackets > 0) { repaired += "]"; brackets--; }
+  while (braces > 0) { repaired += "}"; braces--; }
+
+  return JSON.parse(repaired);
+}
+
+// ── Tool schemas ─────────────────────────────────────────────────────────
+
+const outlineTool = {
+  type: "function",
+  function: {
+    name: "create_course_outline",
+    description: "Gera a estrutura/outline do curso com módulos, títulos de lições e labs",
+    parameters: {
+      type: "object",
+      properties: {
+        modules: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              description: { type: "string" },
+              difficulty: { type: "string", enum: ["iniciante", "intermediario", "avancado"] },
+              xp_reward: { type: "number" },
+              learning_objectives: { type: "array", items: { type: "string" } },
+              lessons: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    duration_minutes: { type: "number" },
+                    xp_reward: { type: "number" },
+                    summary: { type: "string", description: "Breve resumo do que esta lição aborda (2-3 frases)" },
+                  },
+                  required: ["title", "duration_minutes", "xp_reward", "summary"],
+                  additionalProperties: false,
+                },
+              },
+              labs: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    difficulty: { type: "string", enum: ["iniciante", "intermediario", "avancado"] },
+                    xp_reward: { type: "number" },
+                  },
+                  required: ["title", "description", "difficulty", "xp_reward"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["title", "description", "difficulty", "xp_reward", "learning_objectives", "lessons", "labs"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["modules"],
+      additionalProperties: false,
+    },
+  },
+};
+
+const lessonContentTool = {
+  type: "function",
+  function: {
+    name: "generate_lesson_content",
+    description: "Gera o conteúdo completo de uma lição em Markdown",
+    parameters: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "Conteúdo completo da lição em Markdown rico" },
+        quiz_questions: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              question: { type: "string" },
+              explanation: { type: "string" },
+              xp_reward: { type: "number" },
+              options: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    text: { type: "string" },
+                    is_correct: { type: "boolean" },
+                  },
+                  required: ["id", "text", "is_correct"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["question", "explanation", "xp_reward", "options"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["content", "quiz_questions"],
+      additionalProperties: false,
+    },
+  },
+};
+
+const labDetailTool = {
+  type: "function",
+  function: {
+    name: "generate_lab_details",
+    description: "Gera detalhes completos de um laboratório prático",
+    parameters: {
+      type: "object",
+      properties: {
+        instructions: { type: "string" },
+        expected_commands: { type: "array", items: { type: "string" } },
+        hints: { type: "array", items: { type: "string" } },
+      },
+      required: ["instructions", "expected_commands", "hints"],
+      additionalProperties: false,
+    },
+  },
+};
+
+// ── Main handler ─────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -35,6 +264,7 @@ serve(async (req) => {
   }
 
   try {
+    // ── Auth ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
@@ -49,10 +279,7 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
         status: 401,
@@ -60,23 +287,16 @@ serve(async (req) => {
       });
     }
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
     const userRoles = roles?.map((r: any) => r.role) || [];
     if (!userRoles.includes("admin") && !userRoles.includes("master")) {
-      return new Response(
-        JSON.stringify({ error: "Acesso restrito a administradores" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Acesso restrito a administradores" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Check free plan course limit
+    // ── Plan limits ──
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdminClient = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -97,569 +317,372 @@ serve(async (req) => {
       if ((courseCount || 0) >= 1) {
         return new Response(
           JSON.stringify({ error: "Limite de 1 curso atingido no plano Gratuito. Faça upgrade para criar mais cursos." }),
-          {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     }
 
+    // ── Parse input ──
     const {
-      title,
-      description,
-      syllabus,
-      curriculum,
-      bibliography,
-      pdfUrl,
-      targetAudience,
-      workloadHours,
-      competencies,
-      pedagogicalStyle,
-      gamificationLevel,
-      communicationTone,
-      contentDensity,
+      title, description, syllabus, curriculum, bibliography, pdfUrl,
+      targetAudience, workloadHours, competencies, pedagogicalStyle,
+      gamificationLevel, communicationTone, contentDensity,
     } = await req.json();
 
     if (!title) {
-      return new Response(
-        JSON.stringify({ error: "Título é obrigatório" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "Título é obrigatório" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // ---- PDF size limits per plan ----
+    // ── PDF validation ──
     const PDF_LIMITS: Record<string, number> = {
-      gratuito: 5 * 1024 * 1024,   // 5MB
-      basico: 10 * 1024 * 1024,    // 10MB
-      pro: 20 * 1024 * 1024,       // 20MB
-      enterprise: 20 * 1024 * 1024, // 20MB
+      gratuito: 5 * 1024 * 1024,
+      basico: 10 * 1024 * 1024,
+      pro: 20 * 1024 * 1024,
+      enterprise: 20 * 1024 * 1024,
     };
     const maxPdfSize = PDF_LIMITS[userPlan] || PDF_LIMITS.gratuito;
     const maxPdfMB = maxPdfSize / 1024 / 1024;
 
-    // ---- Validate PDF size and optionally download for inline base64 ----
     let hasPdf = false;
     let pdfBase64: string | null = null;
     if (pdfUrl) {
-      console.log("Checking PDF size via HEAD:", pdfUrl);
       try {
         const pdfSizeBytes = await getPdfSizeBytes(pdfUrl);
         if (pdfSizeBytes > 0 && pdfSizeBytes > maxPdfSize) {
           return new Response(
-            JSON.stringify({ error: `PDF excede o limite de ${maxPdfMB}MB para o plano ${userPlan}. Faça upgrade para aumentar o limite.` }),
-            {
-              status: 400,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            }
+            JSON.stringify({ error: `PDF excede o limite de ${maxPdfMB}MB para o plano ${userPlan}.` }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         }
-        console.log(`PDF validated: ${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB (plan: ${userPlan}, limit: ${maxPdfMB}MB)`);
         hasPdf = true;
-
-        // Only download and inline if PDF is small enough for edge function memory
         if (pdfSizeBytes > 0 && pdfSizeBytes <= MAX_PDF_INLINE_BYTES) {
-          console.log("Downloading PDF for inline base64 (small enough)...");
           const pdfResponse = await fetch(pdfUrl);
           if (pdfResponse.ok) {
             const pdfBuffer = await pdfResponse.arrayBuffer();
             pdfBase64 = arrayBufferToBase64(pdfBuffer);
-            console.log(`PDF base64 ready: ${(pdfBuffer.byteLength / 1024 / 1024).toFixed(2)}MB`);
           }
-        } else {
-          console.log(`PDF too large for inline (${(pdfSizeBytes / 1024 / 1024).toFixed(2)}MB > 4MB). Using text fields only.`);
         }
       } catch (e) {
         console.error("PDF validation error:", e);
       }
     }
 
-    // ---- Build the enhanced system prompt ----
-    const gamifLevel = gamificationLevel || "medio";
-    const tone = communicationTone || "profissional";
+    // ── Config ──
     const density = contentDensity || "normal";
+    const tone = communicationTone || "profissional";
+    const gamifLevel = gamificationLevel || "medio";
+    const outlineModel = "google/gemini-2.5-flash";
+    const contentModel = density === "detalhado" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
 
-    // Use a more powerful model for detailed content
-    const aiModel = density === "detalhado" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+    // ── Build context string (shared across all calls) ──
+    let courseContext = `**Título do Curso:** ${title}`;
+    if (description) courseContext += `\n**Descrição:** ${description}`;
+    if (targetAudience) courseContext += `\n**Público-Alvo:** ${targetAudience}`;
+    if (workloadHours) courseContext += `\n**Carga Horária:** ${workloadHours} horas`;
+    if (competencies?.length) courseContext += `\n**Competências:** ${competencies.join(", ")}`;
+    if (pedagogicalStyle) courseContext += `\n**Estilo Pedagógico:** ${pedagogicalStyle}`;
+    if (syllabus) courseContext += `\n**Ementa:** ${syllabus}`;
+    if (curriculum) courseContext += `\n**Conteúdo Programático:** ${curriculum}`;
+    if (bibliography) courseContext += `\n**Bibliografia:** ${bibliography}`;
 
-    const pdfInstructions = hasPdf
-      ? `## INSTRUÇÃO PRIORITÁRIA — MATERIAL DE REFERÊNCIA (PDF)
+    const toneInstruction = tone === "informal"
+      ? "Use linguagem acessível, próxima e exemplos do cotidiano."
+      : tone === "academico"
+      ? "Use tom acadêmico e formal, com rigor técnico e citações."
+      : "Use tom profissional e claro, equilibrando acessibilidade com rigor técnico.";
 
-O administrador forneceu um **documento PDF de referência** que é a BASE PRINCIPAL para a geração do curso. Você DEVE:
+    const densityConfig = density === "resumido"
+      ? { modules: "3-5", lessons: "2-3", labs: "1", words: "1000", quizzes: "3" }
+      : density === "detalhado"
+      ? { modules: "5-8", lessons: "4-6", labs: "2-3", words: "2500", quizzes: "4-5" }
+      : { modules: "4-6", lessons: "3-4", labs: "1-2", words: "1500", quizzes: "3-4" };
 
-1. **ANALISAR O PDF INTEGRALMENTE** — Leia e compreenda todo o conteúdo do documento
-2. **EXTRAIR os conceitos, definições, exemplos e estrutura** do PDF para fundamentar cada lição
-3. **SEGUIR a organização temática** do PDF como guia principal para a sequência dos módulos
-4. **USAR os termos técnicos, definições e explicações** do PDF como base, reescrevendo com originalidade
-5. **APROFUNDAR o conteúdo do PDF** — não resuma superficialmente; expanda cada tópico com detalhes, exemplos práticos e contexto adicional
-6. **REFERENCIAR conceitos específicos** do PDF dentro das lições (ex: "Conforme abordado no material de referência...")
-7. **NUNCA copiar literalmente** — reescreva sempre com suas próprias palavras mantendo a essência e profundidade
+    // ── SSE stream setup ──
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        function sendEvent(event: string, data: any) {
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        }
 
-⚠️ O PDF é sua fonte PRIMÁRIA. Os campos de ementa, bibliografia e conteúdo programático são COMPLEMENTARES. Em caso de conflito, priorize o conteúdo do PDF.`
-      : `## FONTES E REFERÊNCIAS (SEM PDF)
-Como não há documento de referência anexado, você DEVE:
-- Basear o conteúdo nas melhores referências acadêmicas e técnicas conhecidas sobre o tema
-- Citar autores, livros e obras de referência relevantes dentro do conteúdo das lições
-- Incluir links para recursos gratuitos e abertos (RFCs, documentação oficial, tutoriais consagrados)
-- Ao final de cada lição, adicionar:
-  ### 📚 Referências e Leitura Complementar
-  Com fontes reais e verificáveis`;
+        try {
+          // ═══════════════════════════════════════════════════════════════
+          // STEP 1: Generate course outline (lightweight)
+          // ═══════════════════════════════════════════════════════════════
+          sendEvent("progress", { step: "generating_outline", message: "Criando estrutura do curso..." });
 
-    const systemPrompt = `Você é um especialista em design instrucional EaD, gamificação educacional e estruturação de cursos digitais para plataformas SaaS multi-tenant.
+          const outlineSystemPrompt = `Você é um especialista em design instrucional EaD e gamificação educacional.
 
-Sua missão é criar uma estrutura completa de curso EaD dinâmico e gamificado pronta para persistência no banco de dados.
+Crie a ESTRUTURA/OUTLINE de um curso EaD gamificado. Gere APENAS a estrutura (títulos, descrições, objetivos), NÃO gere o conteúdo das lições ainda.
 
-## CONTEXTO DA PLATAFORMA
+## REGRAS
+- Gere ${densityConfig.modules} módulos
+- Cada módulo com ${densityConfig.lessons} lições e ${densityConfig.labs} lab(s) prático(s)
+- Evolução progressiva de dificuldade (iniciante → intermediário → avançado)
+- Cada lição com duração de 5-15 minutos (microlearning)
+- Incluir lições de revisão/consolidação a cada 3-4 lições
+- XP: lições 30-50, labs 80-150
+- O summary de cada lição deve descrever claramente o que será abordado (2-3 frases)
+- Gere em português (pt-BR)
+${hasPdf ? "\n⚠️ O PDF de referência foi fornecido. Baseie a estrutura MAJORITARIAMENTE no conteúdo do PDF." : ""}`;
 
-Você está gerando conteúdo para uma **plataforma educacional SaaS multi-tenant**. Cada tenant representa um cliente independente. Considere:
-- Cursos são gerados automaticamente dentro do ambiente do tenant
-- Conteúdos devem ser **100% originais**, sem plágio ou cópia direta
-- O material enviado pelo usuário (PDF, ementa, bibliografia) serve como **referência conceitual principal** — nunca copie literalmente, mas baseie-se fortemente nele
-- A plataforma possui suporte nativo a: videoaulas, quizzes interativos, flashcards, cards educacionais, desafios gamificados, trilhas de aprendizagem, microlearning e avaliações automáticas
-- Utilize os recursos da plataforma de forma intencional e variada para maximizar o engajamento
+          let outlineUserMessage: any;
+          if (hasPdf && pdfBase64) {
+            outlineUserMessage = {
+              role: "user",
+              content: [
+                { type: "text", text: `Crie a estrutura do curso:\n\n${courseContext}\n\nBASEIE-SE NO PDF ANEXADO como fonte principal.` },
+                { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
+              ],
+            };
+          } else {
+            outlineUserMessage = `Crie a estrutura do curso:\n\n${courseContext}`;
+          }
 
-${pdfInstructions}
+          console.log(`[Step 1] Generating outline (model: ${outlineModel})`);
+          const outlineData = await callAI(
+            LOVABLE_API_KEY, outlineModel, outlineSystemPrompt, outlineUserMessage,
+            [outlineTool], { type: "function", function: { name: "create_course_outline" } },
+            4096,
+          );
 
-## PRINCÍPIOS PEDAGÓGICOS OBRIGATÓRIOS
+          let outline = extractJSON(outlineData);
+          if (!outline.modules && Array.isArray(outline)) outline = { modules: outline };
+          console.log(`[Step 1] Outline: ${outline.modules.length} modules`);
+          sendEvent("progress", { step: "outline_done", message: `Estrutura criada: ${outline.modules.length} módulos`, moduleCount: outline.modules.length });
 
-1. **Microlearning**: Cada lição deve ter entre 5 e 15 minutos de duração estimada
-2. **Aprendizagem ativa**: Intercalar teoria com exercícios práticos, quizzes e desafios
-3. **Progressão lógica**: Módulos devem evoluir do fundamental ao avançado com checkpoints
-4. **Revisão periódica**: Incluir lições de revisão/consolidação a cada 3-4 lições
-5. **Trilha de aprendizagem**: Criar dependências lógicas entre módulos (prerequisitos)
+          // ═══════════════════════════════════════════════════════════════
+          // STEP 2: Generate lesson content + quizzes (per lesson)
+          // ═══════════════════════════════════════════════════════════════
+          const fullModules: any[] = [];
+          let totalLessons = 0;
+          let completedLessons = 0;
 
-## REGRAS DE CONTEÚDO DAS LIÇÕES (CRÍTICO)
+          for (const mod of outline.modules) {
+            totalLessons += mod.lessons.length;
+          }
 
-O conteúdo de cada lição DEVE ser **denso, profundo e extenso** — mínimo **1500 palavras por lição**.
-Cada lição deve cobrir o tópico com profundidade acadêmica, incluindo:
-- Fundamentação teórica detalhada com definições precisas
-- Múltiplos exemplos práticos e casos de uso reais
-- Analogias e comparações para facilitar a compreensão
-- Contexto histórico ou evolução do conceito quando relevante
-- Relação com outros tópicos do curso
+          const lessonSystemPrompt = `Você é um especialista em design instrucional EaD, criando conteúdo para a plataforma educacional gamificada.
 
-Use as seguintes convenções em markdown:
+## TOM
+${toneInstruction}
 
-1. **Caixas de destaque** — blockquotes com emojis:
-   > 💡 **Dica:** texto da dica
-   > ⚠️ **Atenção:** texto de alerta
-   > 📌 **Importante:** texto importante
-   > 🔑 **Conceito-chave:** definição do conceito
+## REGRAS DE CONTEÚDO (CRÍTICO)
+O conteúdo DEVE ter NO MÍNIMO ${densityConfig.words} palavras. Seja EXTENSO e DETALHADO.
 
-2. **Flashcards educacionais** — use este padrão:
+Use estas convenções em Markdown:
+1. **Caixas de destaque** com blockquotes e emojis:
+   > 💡 **Dica:** texto
+   > ⚠️ **Atenção:** texto
+   > 📌 **Importante:** texto
+   > 🔑 **Conceito-chave:** texto
+
+2. **Flashcards** com:
    :::card
    **Pergunta ou termo**
    ---
-   Resposta ou explicação detalhada
+   Resposta detalhada
    :::
 
-3. **Painéis com abas** — para organizar conteúdo:
+3. **Abas** para organizar:
    :::tabs
    ::tab[Teoria]
    Conteúdo teórico
    ::tab[Exemplo Prático]
    Exemplo aplicado
-   ::tab[Exercício]
-   Atividade para o aluno
    :::
 
-4. **Tabelas comparativas** — para confrontar conceitos
-5. **Listas de passos** — procedimentos numerados com sub-itens
-6. **Blocos de código** — com linguagem especificada para exemplos técnicos
+4. **Tabelas comparativas**, **listas numeradas**, **blocos de código**
 
-7. **Seção de vídeos** — OBRIGATÓRIO ao final de cada lição. Inclua 2-3 vídeos reais do YouTube sobre o tema, preferencialmente em português:
+5. **Vídeos reais do YouTube** (pt-BR preferencialmente):
    ### 🎬 Recursos Multimídia
-   📺 **[Título Real do Vídeo](https://www.youtube.com/watch?v=ID_REAL)** (duração estimada)
-   
-   IMPORTANTE: Use APENAS URLs reais e válidas do YouTube. Use vídeos conhecidos de canais educacionais brasileiros como:
-   - Curso em Vídeo (Gustavo Guanabara)
-   - Boson Treinamentos
-   - Univesp
-   - Hardware Redes Brasil
-   - Outros canais educacionais relevantes ao tema
+   📺 **[Título do Vídeo](https://www.youtube.com/watch?v=ID_REAL)** (duração)
+   Use canais como: Curso em Vídeo, Boson Treinamentos, Univesp, Hardware Redes Brasil
 
-8. **Resumo visual** — encerrar cada lição:
+6. **Resumo** ao final:
    ### 📋 Resumo da Lição
    - ✅ Ponto 1
    - ✅ Ponto 2
 
-Varie os elementos para manter o engajamento. Nunca faça lições com apenas texto corrido.
+Varie os elementos para manter engajamento. Nunca faça lições só com texto corrido.
 
-## TOM DE COMUNICAÇÃO: ${tone === "informal" ? "Informal e próximo, use linguagem acessível e exemplos do cotidiano" : tone === "academico" ? "Acadêmico e formal, com rigor técnico e citações" : "Profissional e claro, equilibrando acessibilidade com rigor técnico"}
-
-## DENSIDADE DE CONTEÚDO: ${density === "resumido" ? "Foque nos conceitos essenciais, seja direto e conciso (mínimo 1000 palavras por lição). Gere 3-5 módulos com 2-3 lições cada." : density === "detalhado" ? `MODO DETALHADO / APROFUNDADO — REQUISITOS MÁXIMOS:
-- Cada lição DEVE ter NO MÍNIMO 2500 palavras de conteúdo rico e aprofundado
-- Gere entre 5 e 8 módulos com 4-6 lições cada
-- Cada módulo DEVE ter 2-3 laboratórios práticos
-- Cada lição DEVE ter 4-5 questões de quiz
-- Use TODOS os elementos interativos: flashcards (:::card), abas (:::tabs), tabelas comparativas, blocos de código, listas numeradas
-- Inclua fundamentação teórica extensa, múltiplos exemplos práticos, estudos de caso, cenários reais
-- Adicione seções de "Aprofundamento" com conceitos avançados
-- Inclua analogias, diagramas textuais e explicações passo-a-passo
-- Cada lição deve ter pelo menos 3 caixas de destaque (💡 Dica, ⚠️ Atenção, 🔑 Conceito-chave)
-- NÃO ECONOMIZE NO CONTEÚDO — este modo é para cursos completos e profissionais` : "Equilíbrio entre profundidade e objetividade (mínimo 1500 palavras por lição). Gere 4-6 módulos com 3-4 lições cada."}
-
-## GAMIFICAÇÃO (Nível: ${gamifLevel})
-${gamifLevel === "baixo"
-  ? "- XP apenas por conclusão de lições e módulos\n- Poucos badges\n- Sem desafios extras"
-  : gamifLevel === "alto"
-  ? "- XP dinâmico: lições = 30-50 XP fixo, quizzes = 10-30 XP por questão (bônus por acerto consecutivo), labs = 80-150 XP (bônus por tempo e acertos)\n- Badges temáticos e progressivos (bronze, prata, ouro) para cada competência\n- Desafios bônus em cada módulo\n- Níveis de maestria por módulo\n- Streaks e multiplicadores de XP"
-  : "- XP equilibrado: lições = 30-50 XP fixo, quizzes = 10-20 XP por questão, labs = 80-120 XP\n- Badges por marcos de conclusão e competências\n- Desafios práticos nos labs"}
-
-## QUIZZES (OBRIGATÓRIO)
-Para cada lição, gere de ${density === "detalhado" ? "4 a 5" : "3 a 5"} questões de quiz com:
-- Pergunta clara e objetiva
-- 4 opções de resposta (apenas 1 correta)
-- Cada opção com id único (formato: "opt_X")
-- Flag is_correct para a opção correta
+## QUIZ
+Gere ${densityConfig.quizzes} questões de quiz com:
+- 4 opções (apenas 1 correta), cada uma com id (opt_1, opt_2, etc.)
 - Explicação pedagógica para a resposta correta
-- XP proporcional à dificuldade (5 a 15 XP por questão)
+- XP de 5 a 15 por questão
 
-## LABORATÓRIOS PRÁTICOS
-- Instruções passo-a-passo detalhadas
-- Comandos esperados realistas para a tecnologia do curso
-- Dicas progressivas (do genérico ao específico)
-- Dificuldade alinhada ao módulo
+## RESTRIÇÕES
+- NÃO gerar código executável
+- NÃO gerar interfaces visuais (HTML/CSS)
+- Gere em português (pt-BR)
+- Conteúdo 100% original`;
 
-## RESTRIÇÕES TÉCNICAS (CRÍTICO — NUNCA VIOLAR)
-- **NÃO gerar código executável nos laboratórios práticos.** Os labs devem conter apenas comandos conceituais ou de verificação (ex: comandos de terminal, consultas, configurações), nunca scripts completos, programas ou trechos de código que possam ser executados como software.
-- **NÃO gerar interfaces visuais.** Não inclua HTML, CSS, componentes de UI, wireframes ou qualquer representação de interface gráfica no conteúdo.
-- **NÃO gerar conteúdo fora do escopo educacional.** Todo o conteúdo deve estar estritamente relacionado ao tema do curso informado. Não extrapole para áreas não solicitadas.
-- **NÃO assumir conhecimento fora das entradas fornecidas.** Baseie-se exclusivamente no título, descrição, ementa, conteúdo programático, bibliografia, PDF fornecido e seu conhecimento técnico especializado.
+          for (let mi = 0; mi < outline.modules.length; mi++) {
+            const mod = outline.modules[mi];
+            const fullLessons: any[] = [];
 
-## REGRAS OBRIGATÓRIAS DE QUANTIDADE
-- Gerar conteúdo em português (pt-BR)
-- Nunca copiar conteúdo literal de materiais de referência — reescrever com originalidade
-- Manter coerência pedagógica entre módulos
-- Distribuir dificuldade progressivamente
-${density === "detalhado" 
-  ? "- Cada módulo deve ter 4-6 lições e 2-3 labs\n- Gerar 5-8 módulos\n- Cada lição deve ter NO MÍNIMO 2500 palavras" 
-  : density === "resumido"
-  ? "- Cada módulo deve ter 2-3 lições e 1 lab\n- Gerar 3-5 módulos\n- Cada lição deve ter NO MÍNIMO 1000 palavras"
-  : "- Cada módulo deve ter 3-5 lições e 1-3 labs\n- Gerar 4-6 módulos\n- Cada lição deve ter NO MÍNIMO 1500 palavras"}`;
+            for (let li = 0; li < mod.lessons.length; li++) {
+              const lesson = mod.lessons[li];
+              completedLessons++;
+              sendEvent("progress", {
+                step: "generating_lesson",
+                message: `Gerando lição ${completedLessons}/${totalLessons}: ${lesson.title}`,
+                moduleIndex: mi,
+                lessonIndex: li,
+                completedLessons,
+                totalLessons,
+              });
 
-    // ---- Build user prompt ----
-    let userPrompt = `Crie a estrutura completa do curso EaD dinâmico e gamificado:
+              const lessonPrompt = `Gere o conteúdo completo da lição abaixo:
 
-**Título do Curso:** ${title}`;
+**Curso:** ${title}
+**Módulo ${mi + 1}:** ${mod.title} — ${mod.description}
+**Lição ${li + 1}:** ${lesson.title}
+**Resumo:** ${lesson.summary}
+**Dificuldade do módulo:** ${mod.difficulty}
+${mod.learning_objectives?.length ? `**Objetivos:** ${mod.learning_objectives.join("; ")}` : ""}
+${hasPdf ? "\nUse como base o PDF de referência fornecido no início do curso." : ""}`;
 
-    if (description) userPrompt += `\n**Descrição:** ${description}`;
-    if (targetAudience) userPrompt += `\n**Público-Alvo:** ${targetAudience}`;
-    if (workloadHours) userPrompt += `\n**Carga Horária Estimada:** ${workloadHours} horas`;
-    if (competencies && competencies.length > 0) userPrompt += `\n**Competências a Desenvolver:** ${competencies.join(", ")}`;
-    if (pedagogicalStyle) userPrompt += `\n**Estilo Pedagógico:** ${pedagogicalStyle}`;
-    if (syllabus) userPrompt += `\n**Ementa:** ${syllabus}`;
-    if (curriculum) userPrompt += `\n**Conteúdo Programático:** ${curriculum}`;
-    if (bibliography) userPrompt += `\n**Bibliografia:** ${bibliography}`;
+              try {
+                console.log(`[Step 2] Lesson ${completedLessons}/${totalLessons}: ${lesson.title}`);
+                const lessonData = await callAI(
+                  LOVABLE_API_KEY, contentModel, lessonSystemPrompt, lessonPrompt,
+                  [lessonContentTool], { type: "function", function: { name: "generate_lesson_content" } },
+                  8192,
+                );
+                const lessonContent = extractJSON(lessonData);
+                fullLessons.push({
+                  title: lesson.title,
+                  content: lessonContent.content || "",
+                  duration_minutes: lesson.duration_minutes,
+                  xp_reward: lesson.xp_reward,
+                  quiz_questions: lessonContent.quiz_questions || [],
+                });
+              } catch (err) {
+                console.error(`Lesson generation failed: ${lesson.title}`, err);
+                // Fallback: create lesson with placeholder
+                fullLessons.push({
+                  title: lesson.title,
+                  content: `# ${lesson.title}\n\n${lesson.summary}\n\n> ⚠️ **Atenção:** O conteúdo desta lição não pôde ser gerado automaticamente. Edite manualmente.`,
+                  duration_minutes: lesson.duration_minutes,
+                  xp_reward: lesson.xp_reward,
+                  quiz_questions: [],
+                });
+              }
+            }
 
-    if (hasPdf) {
-      userPrompt += `\n\n**⚠️ ATENÇÃO: O documento PDF de referência está anexado nesta mensagem. BASEIE-SE MAJORITARIAMENTE no conteúdo deste PDF para gerar o curso.** Analise-o integralmente, extraia os conceitos principais, a estrutura temática, definições e exemplos. Use-o como a fonte PRIMÁRIA de conhecimento para criar lições profundas e detalhadas. Reescreva com originalidade, mas mantenha toda a profundidade e riqueza do material original.`;
-    }
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 3: Generate lab details (per module)
+            // ═══════════════════════════════════════════════════════════════
+            const fullLabs: any[] = [];
+            for (let labIdx = 0; labIdx < mod.labs.length; labIdx++) {
+              const lab = mod.labs[labIdx];
+              sendEvent("progress", {
+                step: "generating_lab",
+                message: `Gerando lab: ${lab.title}`,
+                moduleIndex: mi,
+                labIndex: labIdx,
+              });
 
-    // Build message parts — use base64 data URL for small PDFs
-    const userParts: any[] = [{ type: "text", text: userPrompt }];
+              const labPrompt = `Gere as instruções detalhadas do laboratório prático:
 
-    if (hasPdf && pdfBase64) {
-      userParts.push({
-        type: "image_url",
-        image_url: {
-          url: `data:application/pdf;base64,${pdfBase64}`,
-        },
-      });
-      console.log("PDF attached as inline base64 data URL");
-    } else if (hasPdf) {
-      console.log("PDF too large for inline — AI will use text fields only");
-    }
+**Curso:** ${title}
+**Módulo:** ${mod.title}
+**Lab:** ${lab.title}
+**Descrição:** ${lab.description}
+**Dificuldade:** ${lab.difficulty}
 
-    const userMessage = {
-      role: "user",
-      content: (hasPdf && pdfBase64) ? userParts : userPrompt,
-    };
+Gere instruções passo-a-passo, comandos esperados (conceituais/de terminal) e dicas progressivas.
+NÃO gere código executável ou scripts completos. Apenas comandos de verificação/configuração.`;
 
-    const pdfStatus = pdfBase64 ? "yes (base64)" : (hasPdf ? "no (too large)" : "no");
-    console.log(`Generating course content (PDF: ${pdfStatus}, model: ${aiModel}, density: ${density})`);
+              try {
+                console.log(`[Step 3] Lab: ${lab.title}`);
+                const labData = await callAI(
+                  LOVABLE_API_KEY, outlineModel, "Você é um especialista em criação de laboratórios práticos educacionais. Gere em pt-BR.", labPrompt,
+                  [labDetailTool], { type: "function", function: { name: "generate_lab_details" } },
+                  4096,
+                );
+                const labDetails = extractJSON(labData);
+                fullLabs.push({
+                  title: lab.title,
+                  description: lab.description,
+                  instructions: labDetails.instructions || "",
+                  expected_commands: labDetails.expected_commands || [],
+                  hints: labDetails.hints || [],
+                  difficulty: lab.difficulty,
+                  xp_reward: lab.xp_reward,
+                });
+              } catch (err) {
+                console.error(`Lab generation failed: ${lab.title}`, err);
+                fullLabs.push({
+                  title: lab.title,
+                  description: lab.description,
+                  instructions: `# ${lab.title}\n\n${lab.description}\n\n> ⚠️ Conteúdo não gerado. Edite manualmente.`,
+                  expected_commands: [],
+                  hints: [],
+                  difficulty: lab.difficulty,
+                  xp_reward: lab.xp_reward,
+                });
+              }
+            }
 
-    const aiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: aiModel,
-          max_tokens: 16384,
-          messages: [
-            { role: "system", content: systemPrompt },
-            userMessage,
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "generate_course_structure",
-                description:
-                  "Gera a estrutura completa do curso EaD com módulos, lições, quizzes e laboratórios",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    modules: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          title: { type: "string" },
-                          description: { type: "string" },
-                          difficulty: {
-                            type: "string",
-                            enum: ["iniciante", "intermediario", "avancado"],
-                          },
-                          xp_reward: { type: "number" },
-                          learning_objectives: {
-                            type: "array",
-                            items: { type: "string" },
-                          },
-                          lessons: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                title: { type: "string" },
-                                content: { type: "string" },
-                                duration_minutes: { type: "number" },
-                                xp_reward: { type: "number" },
-                                quiz_questions: {
-                                  type: "array",
-                                  items: {
-                                    type: "object",
-                                    properties: {
-                                      question: { type: "string" },
-                                      explanation: { type: "string" },
-                                      xp_reward: { type: "number" },
-                                      options: {
-                                        type: "array",
-                                        items: {
-                                          type: "object",
-                                          properties: {
-                                            id: { type: "string" },
-                                            text: { type: "string" },
-                                            is_correct: { type: "boolean" },
-                                          },
-                                          required: ["id", "text", "is_correct"],
-                                          additionalProperties: false,
-                                        },
-                                      },
-                                    },
-                                    required: ["question", "explanation", "xp_reward", "options"],
-                                    additionalProperties: false,
-                                  },
-                                },
-                              },
-                              required: [
-                                "title",
-                                "content",
-                                "duration_minutes",
-                                "xp_reward",
-                                "quiz_questions",
-                              ],
-                              additionalProperties: false,
-                            },
-                          },
-                          labs: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                title: { type: "string" },
-                                description: { type: "string" },
-                                instructions: { type: "string" },
-                                expected_commands: {
-                                  type: "array",
-                                  items: { type: "string" },
-                                },
-                                hints: {
-                                  type: "array",
-                                  items: { type: "string" },
-                                },
-                                difficulty: {
-                                  type: "string",
-                                  enum: ["iniciante", "intermediario", "avancado"],
-                                },
-                                xp_reward: { type: "number" },
-                              },
-                              required: [
-                                "title",
-                                "description",
-                                "instructions",
-                                "expected_commands",
-                                "hints",
-                                "difficulty",
-                                "xp_reward",
-                              ],
-                              additionalProperties: false,
-                            },
-                          },
-                        },
-                        required: [
-                          "title",
-                          "description",
-                          "difficulty",
-                          "xp_reward",
-                          "learning_objectives",
-                          "lessons",
-                          "labs",
-                        ],
-                        additionalProperties: false,
-                      },
-                    },
-                  },
-                  required: ["modules"],
-                  additionalProperties: false,
-                },
-              },
-            },
-          ],
-          tool_choice: {
-            type: "function",
-            function: { name: "generate_course_structure" },
-          },
-        }),
-      }
-    );
+            fullModules.push({
+              title: mod.title,
+              description: mod.description,
+              difficulty: mod.difficulty,
+              xp_reward: mod.xp_reward,
+              learning_objectives: mod.learning_objectives || [],
+              lessons: fullLessons,
+              labs: fullLabs,
+            });
+          }
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns instantes." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes para IA. Entre em contato com o suporte." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errorText);
-      return new Response(
-        JSON.stringify({ error: "Erro ao gerar conteúdo com IA" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+          // ═══════════════════════════════════════════════════════════════
+          // DONE: Send final result
+          // ═══════════════════════════════════════════════════════════════
+          sendEvent("progress", { step: "done", message: "Curso gerado com sucesso!" });
+          sendEvent("result", { modules: fullModules });
+          controller.close();
 
-    const aiData = await aiResponse.json();
-    console.log("AI response keys:", Object.keys(aiData));
-    console.log("AI finish_reason:", aiData.choices?.[0]?.finish_reason);
-    
-    const message = aiData.choices?.[0]?.message;
-    const toolCall = message?.tool_calls?.[0];
+        } catch (error) {
+          console.error("Generation error:", error);
+          const msg = error instanceof Error ? error.message : "Erro desconhecido";
+          let userMsg = "Erro ao gerar conteúdo.";
+          if (msg === "RATE_LIMIT") userMsg = "Limite de requisições excedido. Tente em alguns minutos.";
+          else if (msg === "NO_CREDITS") userMsg = "Créditos insuficientes para IA.";
+          else if (msg === "AI_NO_JSON") userMsg = "IA não retornou estrutura válida. Tente novamente.";
 
-    // Try to get raw JSON string from tool_calls or fallback to message content
-    let rawJson: string | null = null;
-    
-    if (toolCall?.function?.arguments) {
-      rawJson = toolCall.function.arguments;
-      console.log("Got JSON from tool_calls, length:", rawJson.length);
-    } else if (message?.content) {
-      // Fallback: AI returned content instead of tool_calls
-      console.log("No tool_calls found, trying to extract JSON from message content...");
-      const content = typeof message.content === "string" ? message.content : JSON.stringify(message.content);
-      // Strip markdown code blocks
-      let cleaned = content
-        .replace(/```json\s*/gi, "")
-        .replace(/```\s*/g, "")
-        .trim();
-      // Find JSON boundaries
-      const jsonStart = cleaned.search(/[\{\[]/);
-      if (jsonStart !== -1) {
-        rawJson = cleaned.substring(jsonStart);
-        console.log("Extracted JSON from content, length:", rawJson.length);
-      }
-    }
-
-    if (!rawJson) {
-      console.error("No valid response from AI. Message:", JSON.stringify(message).substring(0, 500));
-      return new Response(
-        JSON.stringify({ error: "IA não retornou estrutura válida. Tente novamente." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Parse JSON with repair logic
-    let structure;
-    try {
-      structure = JSON.parse(rawJson);
-    } catch (parseError) {
-      console.error("JSON parse failed, attempting repair...", parseError);
-      let repaired = rawJson;
-      // Remove trailing commas before } or ]
-      repaired = repaired.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
-      // Remove control characters
-      repaired = repaired.replace(/[\x00-\x1F\x7F]/g, (ch) => ch === '\n' || ch === '\r' || ch === '\t' ? ch : '');
-      
-      // Find last complete structure
-      const lastBrace = repaired.lastIndexOf("}");
-      if (lastBrace > 0) {
-        repaired = repaired.substring(0, lastBrace + 1);
-        // Count and balance brackets
-        let braces = 0, brackets = 0;
-        for (const char of repaired) {
-          if (char === '{') braces++;
-          if (char === '}') braces--;
-          if (char === '[') brackets++;
-          if (char === ']') brackets--;
+          sendEvent("error", { error: userMsg });
+          controller.close();
         }
-        while (brackets > 0) { repaired += ']'; brackets--; }
-        while (braces > 0) { repaired += '}'; braces--; }
-        try {
-          structure = JSON.parse(repaired);
-          console.log("Successfully repaired truncated JSON");
-        } catch (e2) {
-          console.error("JSON repair also failed:", e2);
-          return new Response(
-            JSON.stringify({ error: "A IA gerou uma resposta muito longa e truncada. Tente novamente com densidade 'resumido'." }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      } else {
-        return new Response(
-          JSON.stringify({ error: "Falha ao processar resposta da IA. Tente novamente." }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-    
-    // Ensure structure has modules array
-    if (!structure.modules && Array.isArray(structure)) {
-      structure = { modules: structure };
-    }
+      },
+    });
 
-    return new Response(JSON.stringify(structure), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
     });
   } catch (error) {
     console.error("generate-course-content error:", error);
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Erro desconhecido",
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
