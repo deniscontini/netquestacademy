@@ -23,9 +23,10 @@ import {
   useGenerateCourseContent,
   useUploadPdf,
   useSaveCourse,
+  GenerationProgressData,
 } from "@/hooks/useCreateCourse";
 import CourseContentPreview from "./CourseContentPreview";
-import GenerationProgress, { GenerationStep } from "./GenerationProgress";
+import GenerationProgress from "./GenerationProgress";
 import { Sparkles, Upload, X, FileText, Loader2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { usePlanLimits, useAdminCourseCount } from "@/hooks/usePlanLimits";
@@ -38,7 +39,7 @@ interface CreateCourseDialogProps {
 
 const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => {
   const [step, setStep] = useState<"form" | "generating" | "preview">("form");
-  const [generationStep, setGenerationStep] = useState<GenerationStep>("analyzing");
+  const [generationProgress, setGenerationProgress] = useState<GenerationProgressData | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [form, setForm] = useState<CourseFormData>({
     title: "",
@@ -96,24 +97,17 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
     }
 
     setStep("generating");
+    setGenerationProgress({ step: "starting", message: "Iniciando..." });
 
     try {
       let uploadedPdfUrl: string | undefined;
 
       if (form.pdfFile) {
-        setGenerationStep("uploading");
+        setGenerationProgress({ step: "uploading", message: "Fazendo upload do PDF..." });
         const url = await uploadPdfMutation.mutateAsync(form.pdfFile);
         setPdfUrl(url);
         uploadedPdfUrl = url;
       }
-
-      setGenerationStep("analyzing");
-      
-      // Simulate progress steps while AI generates everything at once
-      const progressTimer = setTimeout(() => setGenerationStep("generating_modules"), 8000);
-      const progressTimer2 = setTimeout(() => setGenerationStep("generating_lessons"), 20000);
-      const progressTimer3 = setTimeout(() => setGenerationStep("generating_quizzes"), 40000);
-      const progressTimer4 = setTimeout(() => setGenerationStep("generating_labs"), 60000);
 
       const competenciesArray = form.competencies
         ? form.competencies.split(",").map((c) => c.trim()).filter(Boolean)
@@ -133,16 +127,14 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
         gamificationLevel: form.gamificationLevel || undefined,
         communicationTone: form.communicationTone || undefined,
         contentDensity: form.contentDensity || undefined,
+        onProgress: (progressData) => {
+          setGenerationProgress(progressData);
+        },
       });
-
-      clearTimeout(progressTimer);
-      clearTimeout(progressTimer2);
-      clearTimeout(progressTimer3);
-      clearTimeout(progressTimer4);
 
       setModules(result.modules);
       setStep("preview");
-      toast.success("Estrutura gerada com quizzes! Revise antes de salvar.");
+      toast.success("Estrutura gerada! Revise antes de salvar.");
     } catch (error: any) {
       setStep("form");
       toast.error(error.message || "Erro ao gerar conteúdo");
@@ -165,7 +157,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
   const resetForm = () => {
     setStep("form");
-    setGenerationStep("analyzing");
+    setGenerationProgress(null);
     setForm({
       title: "",
       description: "",
@@ -214,7 +206,7 @@ const CreateCourseDialog = ({ open, onOpenChange }: CreateCourseDialogProps) => 
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pr-2 sm:pr-3">
           {step === "generating" ? (
-            <GenerationProgress currentStep={generationStep} hasPdf={!!form.pdfFile} />
+            <GenerationProgress progress={generationProgress} hasPdf={!!form.pdfFile} />
           ) : step === "form" ? (
             <div className="space-y-3 sm:space-y-4 pb-4">
               {hasReachedCourseLimit && (

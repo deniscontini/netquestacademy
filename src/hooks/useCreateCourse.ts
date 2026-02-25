@@ -60,6 +60,17 @@ export interface CourseFormData {
   contentDensity?: string;
 }
 
+export interface GenerationProgressData {
+  step: string;
+  message: string;
+  moduleCount?: number;
+  moduleIndex?: number;
+  lessonIndex?: number;
+  completedLessons?: number;
+  totalLessons?: number;
+  labIndex?: number;
+}
+
 export const useGenerateCourseContent = () => {
   return useMutation({
     mutationFn: async (data: {
@@ -76,18 +87,79 @@ export const useGenerateCourseContent = () => {
       gamificationLevel?: string;
       communicationTone?: string;
       contentDensity?: string;
+      onProgress?: (data: GenerationProgressData) => void;
     }): Promise<{ modules: GeneratedModule[] }> => {
-      const { data: result, error } = await supabase.functions.invoke(
-        "generate-course-content",
-        { body: data }
-      );
+      const { onProgress, ...body } = data;
 
-      if (error) {
-        throw new Error(error.message || "Erro ao gerar conteúdo");
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const session = (await supabase.auth.getSession()).data.session;
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/generate-course-content`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token || supabaseKey}`,
+          apikey: supabaseKey,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        // Non-SSE error response
+        const contentType = resp.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const errData = await resp.json();
+          throw new Error(errData.error || `Erro ${resp.status}`);
+        }
+        throw new Error(`Erro ${resp.status}`);
       }
 
-      if (result?.error) {
-        throw new Error(result.error);
+      // Parse SSE stream
+      const reader = resp.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let result: { modules: GeneratedModule[] } | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = buffer.indexOf("\n\n")) !== -1) {
+          const chunk = buffer.slice(0, newlineIndex);
+          buffer = buffer.slice(newlineIndex + 2);
+
+          let eventType = "message";
+          let eventData = "";
+
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("event: ")) eventType = line.slice(7).trim();
+            else if (line.startsWith("data: ")) eventData = line.slice(6);
+          }
+
+          if (!eventData) continue;
+
+          try {
+            const parsed = JSON.parse(eventData);
+
+            if (eventType === "progress" && onProgress) {
+              onProgress(parsed);
+            } else if (eventType === "result") {
+              result = parsed;
+            } else if (eventType === "error") {
+              throw new Error(parsed.error || "Erro na geração");
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) continue;
+            throw e;
+          }
+        }
+      }
+
+      if (!result) {
+        throw new Error("Nenhum resultado recebido da geração");
       }
 
       return result;

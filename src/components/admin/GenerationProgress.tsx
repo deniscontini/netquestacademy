@@ -1,79 +1,128 @@
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check, Upload, Brain, BookOpen, HelpCircle, FlaskConical } from "lucide-react";
+import { Loader2, Check, Upload, Brain, BookOpen, HelpCircle, FlaskConical, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type GenerationStep = 
-  | "uploading"
-  | "analyzing" 
-  | "generating_modules"
-  | "generating_lessons"
-  | "generating_quizzes"
-  | "generating_labs"
-  | "done";
+export interface GenerationProgressData {
+  step: string;
+  message: string;
+  moduleCount?: number;
+  moduleIndex?: number;
+  lessonIndex?: number;
+  completedLessons?: number;
+  totalLessons?: number;
+  labIndex?: number;
+}
 
 interface GenerationProgressProps {
-  currentStep: GenerationStep;
+  progress: GenerationProgressData | null;
   hasPdf: boolean;
 }
 
-const STEPS_WITH_PDF: { key: GenerationStep; label: string; icon: React.ElementType }[] = [
-  { key: "uploading", label: "Fazendo upload do PDF...", icon: Upload },
-  { key: "analyzing", label: "Analisando ementa e referências...", icon: Brain },
-  { key: "generating_modules", label: "Estruturando módulos...", icon: BookOpen },
-  { key: "generating_lessons", label: "Gerando lições e conteúdo...", icon: BookOpen },
-  { key: "generating_quizzes", label: "Criando quizzes interativos...", icon: HelpCircle },
-  { key: "generating_labs", label: "Montando laboratórios práticos...", icon: FlaskConical },
-];
+const GenerationProgress = ({ progress, hasPdf }: GenerationProgressProps) => {
+  const step = progress?.step || "starting";
+  const message = progress?.message || "Iniciando...";
 
-const STEPS_WITHOUT_PDF: { key: GenerationStep; label: string; icon: React.ElementType }[] = [
-  { key: "analyzing", label: "Pesquisando fontes e referências...", icon: Brain },
-  { key: "generating_modules", label: "Estruturando módulos...", icon: BookOpen },
-  { key: "generating_lessons", label: "Gerando lições e conteúdo...", icon: BookOpen },
-  { key: "generating_quizzes", label: "Criando quizzes interativos...", icon: HelpCircle },
-  { key: "generating_labs", label: "Montando laboratórios práticos...", icon: FlaskConical },
-];
+  // Calculate progress percentage
+  let progressPercent = 5;
+  if (step === "generating_outline") progressPercent = 10;
+  else if (step === "outline_done") progressPercent = 15;
+  else if (step === "generating_lesson" && progress?.totalLessons) {
+    const lessonProgress = (progress.completedLessons || 0) / progress.totalLessons;
+    progressPercent = 15 + lessonProgress * 65; // 15% to 80%
+  }
+  else if (step === "generating_lab") progressPercent = 82;
+  else if (step === "done") progressPercent = 100;
 
-const GenerationProgress = ({ currentStep, hasPdf }: GenerationProgressProps) => {
-  const steps = hasPdf ? STEPS_WITH_PDF : STEPS_WITHOUT_PDF;
-  const currentIndex = steps.findIndex((s) => s.key === currentStep);
-  const progressPercent = currentStep === "done" 
-    ? 100 
-    : Math.max(5, ((currentIndex + 0.5) / steps.length) * 100);
+  // Build dynamic step list
+  const steps: { key: string; label: string; icon: React.ElementType; done: boolean; active: boolean }[] = [];
+
+  if (hasPdf) {
+    steps.push({
+      key: "uploading",
+      label: "Upload do PDF concluído",
+      icon: Upload,
+      done: true,
+      active: false,
+    });
+  }
+
+  steps.push({
+    key: "generating_outline",
+    label: step === "generating_outline" ? "Analisando e criando estrutura do curso..." : "Estrutura do curso criada",
+    icon: Brain,
+    done: ["outline_done", "generating_lesson", "generating_lab", "done"].includes(step),
+    active: step === "generating_outline",
+  });
+
+  if (progress?.moduleCount) {
+    steps.push({
+      key: "outline_done",
+      label: `${progress.moduleCount} módulos estruturados`,
+      icon: Sparkles,
+      done: ["generating_lesson", "generating_lab", "done"].includes(step),
+      active: step === "outline_done",
+    });
+  }
+
+  steps.push({
+    key: "generating_lesson",
+    label: step === "generating_lesson"
+      ? `Gerando lição ${progress?.completedLessons || 0}/${progress?.totalLessons || "?"}...`
+      : progress?.totalLessons
+      ? `${progress.totalLessons} lições com quizzes geradas`
+      : "Gerando lições e quizzes...",
+    icon: BookOpen,
+    done: ["generating_lab", "done"].includes(step),
+    active: step === "generating_lesson",
+  });
+
+  steps.push({
+    key: "generating_lab",
+    label: step === "generating_lab" ? "Gerando laboratórios práticos..." : "Laboratórios práticos gerados",
+    icon: FlaskConical,
+    done: step === "done",
+    active: step === "generating_lab",
+  });
 
   return (
     <div className="space-y-4 py-6">
       <div className="text-center space-y-2">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-        <p className="text-sm font-medium">Gerando estrutura do curso com IA</p>
-        <p className="text-xs text-muted-foreground">Isso pode levar até 2 minutos</p>
+        {step === "done" ? (
+          <Check className="w-8 h-8 mx-auto text-accent" />
+        ) : (
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+        )}
+        <p className="text-sm font-medium">{message}</p>
+        <p className="text-xs text-muted-foreground">
+          {step === "done"
+            ? "Pronto! Revise o conteúdo gerado."
+            : "Geração iterativa — cada lição é criada individualmente para máxima qualidade"}
+        </p>
       </div>
-      
+
       <Progress value={progressPercent} className="h-2" />
-      
+
       <div className="space-y-1.5">
-        {steps.map((step, i) => {
-          const isActive = step.key === currentStep;
-          const isDone = i < currentIndex || currentStep === "done";
-          const Icon = step.icon;
-          
+        {steps.map((s) => {
+          const Icon = s.icon;
           return (
             <div
-              key={step.key}
+              key={s.key}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs transition-all",
-                isActive && "bg-primary/10 text-primary font-medium",
-                isDone && "text-accent",
-                !isActive && !isDone && "text-muted-foreground/50"
+                s.active && "bg-primary/10 text-primary font-medium",
+                s.done && "text-accent",
+                !s.active && !s.done && "text-muted-foreground/50",
               )}
             >
-              {isDone ? (
+              {s.done ? (
                 <Check className="w-3.5 h-3.5 shrink-0" />
-              ) : isActive ? (
+              ) : s.active ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
               ) : (
                 <Icon className="w-3.5 h-3.5 shrink-0" />
               )}
-              <span>{step.label}</span>
+              <span>{s.label}</span>
             </div>
           );
         })}
