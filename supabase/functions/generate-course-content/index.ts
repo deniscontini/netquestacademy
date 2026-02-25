@@ -403,6 +403,7 @@ ${density === "detalhado"
         },
         body: JSON.stringify({
           model: aiModel,
+          max_tokens: 16384,
           messages: [
             { role: "system", content: systemPrompt },
             userMessage,
@@ -572,7 +573,42 @@ ${density === "detalhado"
       );
     }
 
-    const structure = JSON.parse(toolCall.function.arguments);
+    let structure;
+    try {
+      structure = JSON.parse(toolCall.function.arguments);
+    } catch (parseError) {
+      console.error("JSON parse failed, attempting repair...", parseError);
+      const raw = toolCall.function.arguments as string;
+      // Try to repair truncated JSON by finding the last complete object
+      let repaired = raw;
+      // Remove trailing incomplete content after last }
+      const lastBrace = repaired.lastIndexOf("}");
+      if (lastBrace > 0) {
+        repaired = repaired.substring(0, lastBrace + 1);
+        // Count open/close brackets to close arrays/objects
+        const openBrackets = (repaired.match(/\[/g) || []).length;
+        const closeBrackets = (repaired.match(/\]/g) || []).length;
+        const openBraces = (repaired.match(/\{/g) || []).length;
+        const closeBraces = (repaired.match(/\}/g) || []).length;
+        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
+        for (let i = 0; i < openBraces - closeBraces; i++) repaired += "}";
+        try {
+          structure = JSON.parse(repaired);
+          console.log("Successfully repaired truncated JSON");
+        } catch (e2) {
+          console.error("JSON repair also failed:", e2);
+          return new Response(
+            JSON.stringify({ error: "A IA gerou uma resposta muito longa e truncada. Tente novamente com menos módulos ou densidade 'resumido'." }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Falha ao processar resposta da IA. Tente novamente." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     return new Response(JSON.stringify(structure), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
