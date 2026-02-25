@@ -564,41 +564,76 @@ ${density === "detalhado"
     }
 
     const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    console.log("AI response keys:", Object.keys(aiData));
+    console.log("AI finish_reason:", aiData.choices?.[0]?.finish_reason);
+    
+    const message = aiData.choices?.[0]?.message;
+    const toolCall = message?.tool_calls?.[0];
 
-    if (!toolCall?.function?.arguments) {
+    // Try to get raw JSON string from tool_calls or fallback to message content
+    let rawJson: string | null = null;
+    
+    if (toolCall?.function?.arguments) {
+      rawJson = toolCall.function.arguments;
+      console.log("Got JSON from tool_calls, length:", rawJson.length);
+    } else if (message?.content) {
+      // Fallback: AI returned content instead of tool_calls
+      console.log("No tool_calls found, trying to extract JSON from message content...");
+      const content = typeof message.content === "string" ? message.content : JSON.stringify(message.content);
+      // Strip markdown code blocks
+      let cleaned = content
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
+      // Find JSON boundaries
+      const jsonStart = cleaned.search(/[\{\[]/);
+      if (jsonStart !== -1) {
+        rawJson = cleaned.substring(jsonStart);
+        console.log("Extracted JSON from content, length:", rawJson.length);
+      }
+    }
+
+    if (!rawJson) {
+      console.error("No valid response from AI. Message:", JSON.stringify(message).substring(0, 500));
       return new Response(
-        JSON.stringify({ error: "IA não retornou estrutura válida" }),
+        JSON.stringify({ error: "IA não retornou estrutura válida. Tente novamente." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Parse JSON with repair logic
     let structure;
     try {
-      structure = JSON.parse(toolCall.function.arguments);
+      structure = JSON.parse(rawJson);
     } catch (parseError) {
       console.error("JSON parse failed, attempting repair...", parseError);
-      const raw = toolCall.function.arguments as string;
-      // Try to repair truncated JSON by finding the last complete object
-      let repaired = raw;
-      // Remove trailing incomplete content after last }
+      let repaired = rawJson;
+      // Remove trailing commas before } or ]
+      repaired = repaired.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+      // Remove control characters
+      repaired = repaired.replace(/[\x00-\x1F\x7F]/g, (ch) => ch === '\n' || ch === '\r' || ch === '\t' ? ch : '');
+      
+      // Find last complete structure
       const lastBrace = repaired.lastIndexOf("}");
       if (lastBrace > 0) {
         repaired = repaired.substring(0, lastBrace + 1);
-        // Count open/close brackets to close arrays/objects
-        const openBrackets = (repaired.match(/\[/g) || []).length;
-        const closeBrackets = (repaired.match(/\]/g) || []).length;
-        const openBraces = (repaired.match(/\{/g) || []).length;
-        const closeBraces = (repaired.match(/\}/g) || []).length;
-        for (let i = 0; i < openBrackets - closeBrackets; i++) repaired += "]";
-        for (let i = 0; i < openBraces - closeBraces; i++) repaired += "}";
+        // Count and balance brackets
+        let braces = 0, brackets = 0;
+        for (const char of repaired) {
+          if (char === '{') braces++;
+          if (char === '}') braces--;
+          if (char === '[') brackets++;
+          if (char === ']') brackets--;
+        }
+        while (brackets > 0) { repaired += ']'; brackets--; }
+        while (braces > 0) { repaired += '}'; braces--; }
         try {
           structure = JSON.parse(repaired);
           console.log("Successfully repaired truncated JSON");
         } catch (e2) {
           console.error("JSON repair also failed:", e2);
           return new Response(
-            JSON.stringify({ error: "A IA gerou uma resposta muito longa e truncada. Tente novamente com menos módulos ou densidade 'resumido'." }),
+            JSON.stringify({ error: "A IA gerou uma resposta muito longa e truncada. Tente novamente com densidade 'resumido'." }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -608,6 +643,11 @@ ${density === "detalhado"
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    }
+    
+    // Ensure structure has modules array
+    if (!structure.modules && Array.isArray(structure)) {
+      structure = { modules: structure };
     }
 
     return new Response(JSON.stringify(structure), {
