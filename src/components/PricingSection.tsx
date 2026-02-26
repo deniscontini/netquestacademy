@@ -84,6 +84,7 @@ const plans = [
 ];
 
 const PricingSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-24 bg-gradient-to-b from-background to-secondary/10 relative">
       <div className="container mx-auto px-4">
