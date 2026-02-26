@@ -1,32 +1,42 @@
 import { GraduationCap, Github, Twitter, Linkedin, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  const scrollTo = (id: string) => {
+    navigate("/");
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
   return (
     <footer className="border-t border-border bg-card/50">
       <div className="container mx-auto px-4 py-12">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold">TechOps Academy</span>
-            </div>
+            </a>
             <p className="text-sm text-muted-foreground">
               Aprenda tecnologia de forma gamificada e prática.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Github className="w-5 h-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="mailto:contato@techopsacademy.com" className="text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="w-5 h-5" />
               </a>
             </div>
@@ -36,10 +46,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Plataforma</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Módulos</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Laboratórios</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Ranking</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Badges</a></li>
+              <li><button onClick={() => scrollTo("ranking")} className="hover:text-foreground transition-colors">Ranking</button></li>
+              <li><button onClick={() => scrollTo("labs")} className="hover:text-foreground transition-colors">Laboratórios</button></li>
+              <li><button onClick={() => scrollTo("precos")} className="hover:text-foreground transition-colors">Preços</button></li>
+              <li><button onClick={() => navigate("/auth")} className="hover:text-foreground transition-colors">Criar Conta</button></li>
             </ul>
           </div>
 
@@ -47,10 +57,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Recursos</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Documentação</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Comunidade</a></li>
+              <li><button onClick={() => navigate("/auth")} className="hover:text-foreground transition-colors">Entrar na Plataforma</button></li>
+              <li><button onClick={() => navigate("/ranking")} className="hover:text-foreground transition-colors">Ver Ranking Global</button></li>
+              <li><button onClick={() => navigate("/conquistas")} className="hover:text-foreground transition-colors">Conquistas</button></li>
+              <li><button onClick={() => navigate("/certificados")} className="hover:text-foreground transition-colors">Certificados</button></li>
             </ul>
           </div>
 
@@ -58,10 +68,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Termos de Uso</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Privacidade</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Cookies</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Licenças</a></li>
+              <li><span className="cursor-default">Termos de Uso</span></li>
+              <li><span className="cursor-default">Privacidade</span></li>
+              <li><span className="cursor-default">Cookies</span></li>
+              <li><span className="cursor-default">Licenças</span></li>
             </ul>
           </div>
         </div>
