@@ -137,7 +137,7 @@ const PricingSection = () => {
                   ))}
                 </ul>
 
-                <Button variant={plan.variant} size="lg" className="w-full">
+                <Button variant={plan.variant} size="lg" className="w-full" onClick={() => navigate("/auth")}>
                   {plan.cta}
                 </Button>
               </CardContent>
