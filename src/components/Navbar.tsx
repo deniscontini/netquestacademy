@@ -65,14 +65,11 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
-              <a href="#cursos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Cursos
+              <a href="#ranking" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Ranking
               </a>
               <a href="#labs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Laboratórios
-              </a>
-              <a href="#ranking" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Ranking
               </a>
               <a href="#precos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Preços
