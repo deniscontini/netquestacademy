@@ -8,11 +8,12 @@ import RankingCard from "./RankingCard";
 
 interface WeeklyLeaderboardProps {
   limit?: number;
+  courseId?: string | null;
 }
 
-const WeeklyLeaderboard = ({ limit = 10 }: WeeklyLeaderboardProps) => {
+const WeeklyLeaderboard = ({ limit = 10, courseId = null }: WeeklyLeaderboardProps) => {
   const { user } = useAuth();
-  const { data: ranking, isLoading } = useWeeklyRanking(limit);
+  const { data: ranking, isLoading } = useWeeklyRanking(limit, courseId);
 
   if (isLoading) {
     return (

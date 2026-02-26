@@ -7,9 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/hooks/useProfile";
 import { useUserRankingPosition } from "@/hooks/useRanking";
 
-const UserRankingCard = () => {
+interface UserRankingCardProps {
+  courseId?: string | null;
+  courseTitle?: string | null;
+}
+
+const UserRankingCard = ({ courseId = null, courseTitle = null }: UserRankingCardProps) => {
   const { data: profile, isLoading: profileLoading } = useProfile();
-  const { data: rankingStats, isLoading: rankingLoading } = useUserRankingPosition();
+  const { data: rankingStats, isLoading: rankingLoading } = useUserRankingPosition(courseId);
 
   const isLoading = profileLoading || rankingLoading;
 
@@ -47,6 +52,8 @@ const UserRankingCard = () => {
   const xpForCurrentLevel = Math.pow((profile.level - 1), 2) * 50;
   const xpForNextLevel = Math.pow(profile.level, 2) * 50;
   const xpProgress = ((profile.xp - xpForCurrentLevel) / (xpForNextLevel - xpForCurrentLevel)) * 100;
+
+  const positionLabel = courseTitle ? `Posição em ${courseTitle}` : "Posição Global";
 
   return (
     <Card variant="glow" className="p-6">
@@ -90,13 +97,13 @@ const UserRankingCard = () => {
         <div className="text-center p-4 rounded-xl bg-secondary/50 border border-border/30">
           <Trophy className="w-6 h-6 text-[hsl(45_90%_55%)] mx-auto mb-2" />
           <div className="text-2xl font-bold font-mono">#{rankingStats.rank}</div>
-          <div className="text-xs text-muted-foreground">Posição Global</div>
+          <div className="text-xs text-muted-foreground">{positionLabel}</div>
         </div>
 
         <div className="text-center p-4 rounded-xl bg-secondary/50 border border-border/30">
           <Users className="w-6 h-6 text-primary mx-auto mb-2" />
           <div className="text-2xl font-bold font-mono">{rankingStats.totalUsers}</div>
-          <div className="text-xs text-muted-foreground">Total de Usuários</div>
+          <div className="text-xs text-muted-foreground">Participantes</div>
         </div>
 
         <div className="text-center p-4 rounded-xl bg-secondary/50 border border-border/30">

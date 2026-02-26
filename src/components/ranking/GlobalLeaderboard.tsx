@@ -9,11 +9,15 @@ import RankingCard from "./RankingCard";
 
 interface GlobalLeaderboardProps {
   limit?: number;
+  courseId?: string | null;
+  courseTitle?: string | null;
 }
 
-const GlobalLeaderboard = ({ limit = 50 }: GlobalLeaderboardProps) => {
+const GlobalLeaderboard = ({ limit = 50, courseId = null, courseTitle = null }: GlobalLeaderboardProps) => {
   const { user } = useAuth();
-  const { data: ranking, isLoading } = useGlobalRanking(limit);
+  const { data: ranking, isLoading } = useGlobalRanking(limit, courseId);
+
+  const title = courseTitle ? `Ranking — ${courseTitle}` : "Ranking Global";
 
   if (isLoading) {
     return (
@@ -36,7 +40,7 @@ const GlobalLeaderboard = ({ limit = 50 }: GlobalLeaderboardProps) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <Trophy className="w-5 h-5 text-[hsl(45_90%_55%)]" />
-          Ranking Global
+          {title}
         </h3>
         <Badge variant="outline" className="text-xs">
           Top {limit}
@@ -57,7 +61,9 @@ const GlobalLeaderboard = ({ limit = 50 }: GlobalLeaderboardProps) => {
             <div className="text-center py-12 text-muted-foreground">
               <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhum usuário no ranking ainda.</p>
-              <p className="text-sm">Seja o primeiro a conquistar XP!</p>
+              <p className="text-sm">
+                {courseId ? "Ninguém completou atividades neste curso ainda." : "Seja o primeiro a conquistar XP!"}
+              </p>
             </div>
           )}
         </div>
