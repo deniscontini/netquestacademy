@@ -2,6 +2,7 @@ import { Check, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -83,6 +84,7 @@ const plans = [
 ];
 
 const PricingSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-24 bg-gradient-to-b from-background to-secondary/10 relative">
       <div className="container mx-auto px-4">
@@ -135,7 +137,7 @@ const PricingSection = () => {
                   ))}
                 </ul>
 
-                <Button variant={plan.variant} size="lg" className="w-full">
+                <Button variant={plan.variant} size="lg" className="w-full" onClick={() => navigate("/auth")}>
                   {plan.cta}
                 </Button>
               </CardContent>
