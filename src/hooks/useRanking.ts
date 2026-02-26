@@ -20,50 +20,76 @@ export interface UserRankingStats {
   nextRankUser: RankingProfile | null;
 }
 
-export const useGlobalRanking = (limit: number = 50) => {
-  return useQuery({
-    queryKey: ["global-ranking", limit],
-    queryFn: async (): Promise<RankingProfile[]> => {
-      const { data, error } = await supabase
-        .from("profiles_public")
-        .select("*")
-        .order("xp", { ascending: false })
-        .limit(limit);
+export interface RankingCourse {
+  id: string;
+  title: string;
+  icon: string;
+}
 
+export const useCoursesForRanking = () => {
+  return useQuery({
+    queryKey: ["courses-for-ranking"],
+    queryFn: async (): Promise<RankingCourse[]> => {
+      const { data, error } = await supabase.rpc("get_courses_for_ranking");
+      if (error) throw error;
+      return (data || []).map((c: any) => ({
+        id: c.out_course_id,
+        title: c.out_course_title,
+        icon: c.out_course_icon,
+      }));
+    },
+  });
+};
+
+export const useGlobalRanking = (limit: number = 50, courseId: string | null = null) => {
+  return useQuery({
+    queryKey: ["global-ranking", limit, courseId],
+    queryFn: async (): Promise<RankingProfile[]> => {
+      const params: any = { p_limit: limit };
+      if (courseId) params.p_course_id = courseId;
+
+      const { data, error } = await supabase.rpc("get_ranking_by_course", params);
       if (error) throw error;
 
-      // Add rank to each profile
-      return (data || []).map((profile, index) => ({
-        id: profile.id || "",
-        user_id: profile.user_id || "",
-        username: profile.username,
-        avatar_url: profile.avatar_url,
-        xp: profile.xp || 0,
-        level: profile.level || 1,
+      return (data || []).map((row: any, index: number) => ({
+        id: row.out_user_id,
+        user_id: row.out_user_id,
+        username: row.out_username,
+        avatar_url: row.out_avatar_url,
+        xp: Number(row.out_xp) || 0,
+        level: row.out_level || 1,
         rank: index + 1,
       }));
     },
   });
 };
 
-export const useUserRankingPosition = () => {
+export const useUserRankingPosition = (courseId: string | null = null) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["user-ranking-position", user?.id],
+    queryKey: ["user-ranking-position", user?.id, courseId],
     queryFn: async (): Promise<UserRankingStats | null> => {
       if (!user) return null;
 
-      // Get all profiles ordered by XP to calculate position
-      const { data: allProfiles, error: allError } = await supabase
-        .from("profiles_public")
-        .select("*")
-        .order("xp", { ascending: false });
+      // Get full ranking to calculate position
+      const params: any = { p_limit: 10000 };
+      if (courseId) params.p_course_id = courseId;
 
-      if (allError) throw allError;
+      const { data, error } = await supabase.rpc("get_ranking_by_course", params);
+      if (error) throw error;
 
-      const profiles = allProfiles || [];
-      const userIndex = profiles.findIndex((p) => p.user_id === user.id);
+      const profiles = (data || []).map((row: any, index: number) => ({
+        id: row.out_user_id,
+        user_id: row.out_user_id,
+        username: row.out_username,
+        avatar_url: row.out_avatar_url,
+        xp: Number(row.out_xp) || 0,
+        level: row.out_level || 1,
+        rank: index + 1,
+      }));
+
+      const userIndex = profiles.findIndex((p: any) => p.user_id === user.id);
 
       if (userIndex === -1) {
         return {
@@ -79,94 +105,41 @@ export const useUserRankingPosition = () => {
       const totalUsers = profiles.length;
       const percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
 
-      // Calculate XP needed to reach next rank
       let xpToNextRank: number | null = null;
       let nextRankUser: RankingProfile | null = null;
 
       if (userIndex > 0) {
         const userAbove = profiles[userIndex - 1];
         const currentUser = profiles[userIndex];
-        xpToNextRank = (userAbove.xp || 0) - (currentUser.xp || 0) + 1;
-        nextRankUser = {
-          id: userAbove.id || "",
-          user_id: userAbove.user_id || "",
-          username: userAbove.username,
-          avatar_url: userAbove.avatar_url,
-          xp: userAbove.xp || 0,
-          level: userAbove.level || 1,
-          rank: userIndex,
-        };
+        xpToNextRank = userAbove.xp - currentUser.xp + 1;
+        nextRankUser = userAbove;
       }
 
-      return {
-        rank,
-        totalUsers,
-        percentile,
-        xpToNextRank,
-        nextRankUser,
-      };
+      return { rank, totalUsers, percentile, xpToNextRank, nextRankUser };
     },
     enabled: !!user,
   });
 };
 
-export const useWeeklyRanking = (limit: number = 10) => {
+export const useWeeklyRanking = (limit: number = 10, courseId: string | null = null) => {
   return useQuery({
-    queryKey: ["weekly-ranking", limit],
+    queryKey: ["weekly-ranking", limit, courseId],
     queryFn: async (): Promise<RankingProfile[]> => {
-      // Get XP transactions from the last 7 days
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
+      const params: any = { p_limit: limit };
+      if (courseId) params.p_course_id = courseId;
 
-      const { data: transactions, error: txError } = await supabase
-        .from("xp_transactions")
-        .select("user_id, amount")
-        .gte("created_at", weekAgo.toISOString());
+      const { data, error } = await supabase.rpc("get_weekly_ranking_by_course", params);
+      if (error) throw error;
 
-      if (txError) throw txError;
-
-      // Aggregate XP by user
-      const xpByUser = new Map<string, number>();
-      (transactions || []).forEach((tx) => {
-        const current = xpByUser.get(tx.user_id) || 0;
-        xpByUser.set(tx.user_id, current + tx.amount);
-      });
-
-      // Get top users by weekly XP
-      const sortedUsers = Array.from(xpByUser.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, limit);
-
-      if (sortedUsers.length === 0) {
-        return [];
-      }
-
-      // Get profile info for these users
-      const userIds = sortedUsers.map(([userId]) => userId);
-      const { data: profiles, error: profileError } = await supabase
-        .from("profiles_public")
-        .select("*")
-        .in("user_id", userIds);
-
-      if (profileError) throw profileError;
-
-      // Map profiles with weekly XP
-      const profileMap = new Map(
-        (profiles || []).map((p) => [p.user_id, p])
-      );
-
-      return sortedUsers.map(([userId, weeklyXp], index) => {
-        const profile = profileMap.get(userId);
-        return {
-          id: profile?.id || "",
-          user_id: userId,
-          username: profile?.username || null,
-          avatar_url: profile?.avatar_url || null,
-          xp: weeklyXp,
-          level: profile?.level || 1,
-          rank: index + 1,
-        };
-      });
+      return (data || []).map((row: any, index: number) => ({
+        id: row.out_user_id,
+        user_id: row.out_user_id,
+        username: row.out_username,
+        avatar_url: row.out_avatar_url,
+        xp: Number(row.out_xp) || 0,
+        level: row.out_level || 1,
+        rank: index + 1,
+      }));
     },
   });
 };
