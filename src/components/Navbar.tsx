@@ -23,14 +23,11 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#cursos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Cursos
+            <a href="#ranking" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Ranking
             </a>
             <a href="#labs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Laboratórios
-            </a>
-            <a href="#ranking" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Ranking
             </a>
             <a href="#precos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Preços
