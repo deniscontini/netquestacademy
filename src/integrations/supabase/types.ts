@@ -1083,6 +1083,34 @@ export type Database = {
         Args: { p_module_id: string; p_user_id: string }
         Returns: boolean
       }
+      get_courses_for_ranking: {
+        Args: never
+        Returns: {
+          out_course_icon: string
+          out_course_id: string
+          out_course_title: string
+        }[]
+      }
+      get_ranking_by_course: {
+        Args: { p_course_id?: string; p_limit?: number }
+        Returns: {
+          out_avatar_url: string
+          out_level: number
+          out_user_id: string
+          out_username: string
+          out_xp: number
+        }[]
+      }
+      get_weekly_ranking_by_course: {
+        Args: { p_course_id?: string; p_limit?: number }
+        Returns: {
+          out_avatar_url: string
+          out_level: number
+          out_user_id: string
+          out_username: string
+          out_xp: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
