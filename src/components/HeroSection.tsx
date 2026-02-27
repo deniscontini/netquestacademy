@@ -16,11 +16,11 @@ const HeroSection = () => {
       {/* Network Grid Pattern */}
       <div className="absolute inset-0 network-grid opacity-50" />
 
-      {/* Floating Elements */}
-      <div className="absolute top-1/4 left-10 animate-float opacity-20">
+      {/* Floating Elements - hidden on mobile */}
+      <div className="absolute top-1/4 left-10 animate-float opacity-20 hidden md:block">
         <Code className="w-16 h-16 text-primary" />
       </div>
-      <div className="absolute bottom-1/3 right-16 animate-float opacity-20" style={{ animationDelay: "2s" }}>
+      <div className="absolute bottom-1/3 right-16 animate-float opacity-20 hidden md:block" style={{ animationDelay: "2s" }}>
         <Laptop className="w-20 h-20 text-accent" />
       </div>
 
