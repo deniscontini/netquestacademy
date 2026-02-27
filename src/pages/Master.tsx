@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import MasterOverview from "@/components/master/MasterOverview";
 import MasterAdmins from "@/components/master/MasterAdmins";
+import MasterReports from "@/components/master/MasterReports";
 import { Crown } from "lucide-react";
 
 const Master = () => {
