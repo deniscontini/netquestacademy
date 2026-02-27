@@ -113,7 +113,7 @@ const GamificationSection = () => {
                 <span className="text-sm text-muted-foreground">0/{badges.length}</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {badges.map((badge, index) => (
                   <div
                     key={index}

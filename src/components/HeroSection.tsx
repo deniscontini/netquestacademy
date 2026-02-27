@@ -16,11 +16,11 @@ const HeroSection = () => {
       {/* Network Grid Pattern */}
       <div className="absolute inset-0 network-grid opacity-50" />
 
-      {/* Floating Elements */}
-      <div className="absolute top-1/4 left-10 animate-float opacity-20">
+      {/* Floating Elements - hidden on mobile */}
+      <div className="absolute top-1/4 left-10 animate-float opacity-20 hidden md:block">
         <Code className="w-16 h-16 text-primary" />
       </div>
-      <div className="absolute bottom-1/3 right-16 animate-float opacity-20" style={{ animationDelay: "2s" }}>
+      <div className="absolute bottom-1/3 right-16 animate-float opacity-20 hidden md:block" style={{ animationDelay: "2s" }}>
         <Laptop className="w-20 h-20 text-accent" />
       </div>
 
@@ -59,7 +59,7 @@ const HeroSection = () => {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 pt-12">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 pt-12">
             <div className="text-center">
               <div className="text-3xl font-bold text-primary font-mono">7+</div>
               <div className="text-sm text-muted-foreground">Módulos</div>
@@ -73,7 +73,7 @@ const HeroSection = () => {
               <div className="text-sm text-muted-foreground">Badges</div>
             </div>
             <div className="text-center">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center justify-center gap-1">
                 <Award className="w-6 h-6 text-[hsl(45_90%_55%)]" />
                 <Users className="w-6 h-6 text-muted-foreground" />
               </div>

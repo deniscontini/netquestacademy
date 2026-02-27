@@ -107,7 +107,7 @@ const PricingSection = () => {
             <Card
               key={index}
               variant={plan.popular ? "glow" : "elevated"}
-              className={`relative ${plan.popular ? "scale-105 z-10" : ""}`}
+              className={`relative ${plan.popular ? "sm:scale-105 z-10" : ""}`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
