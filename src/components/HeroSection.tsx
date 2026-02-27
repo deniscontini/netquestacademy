@@ -59,7 +59,7 @@ const HeroSection = () => {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap justify-center gap-8 pt-12">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 pt-12">
             <div className="text-center">
               <div className="text-3xl font-bold text-primary font-mono">7+</div>
               <div className="text-sm text-muted-foreground">Módulos</div>
@@ -73,7 +73,7 @@ const HeroSection = () => {
               <div className="text-sm text-muted-foreground">Badges</div>
             </div>
             <div className="text-center">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center justify-center gap-1">
                 <Award className="w-6 h-6 text-[hsl(45_90%_55%)]" />
                 <Users className="w-6 h-6 text-muted-foreground" />
               </div>
