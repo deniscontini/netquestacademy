@@ -60,9 +60,10 @@ const Master = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="admins">Administradores</TabsTrigger>
+            <TabsTrigger value="reports">Relatórios</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -71,6 +72,10 @@ const Master = () => {
 
           <TabsContent value="admins">
             <MasterAdmins />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <MasterReports />
           </TabsContent>
         </Tabs>
       </main>
