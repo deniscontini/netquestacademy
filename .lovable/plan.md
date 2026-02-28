@@ -1,36 +1,53 @@
 
 
-# Integracao do JivoChat
+# Painel Gerencial para Administrador/Professor
 
-## Visao Geral
+## Objetivo
+Transformar a aba "Visao Geral" do painel administrativo (`/admin`) em um dashboard gerencial completo e rico, com estatisticas detalhadas, graficos de atividade, rankings de alunos, metricas por curso e filtros por curso. O design seguira o mesmo padrao visual ja utilizado no painel Master (MasterReports).
 
-Adicionar o widget do JivoChat ao SaaS inserindo o snippet oficial no `index.html`. O JivoChat aparecera como um botao flutuante de atendimento em todas as paginas, sem necessidade de backend ou edge functions.
+## O que muda
 
-## Pre-requisito
+A atual `AdminOverview` possui apenas 6 cards simples e 3 botoes de acao rapida. O novo painel incluira:
 
-Voce precisa ter uma conta no JivoChat (https://www.jivochat.com.br) e obter o **Widget ID** do seu canal. Ele esta disponivel no painel do JivoChat em Configuracoes > Canais > Site > Codigo de instalacao. O ID e o valor dentro do script, algo como `//code.jivosite.com/widget/XXXXXX`.
+1. **Filtro por curso** -- Select no topo para ver dados gerais ou filtrados por um curso especifico
+2. **Cards de resumo expandidos** -- 8 cards: Alunos, Cursos, Modulos, Licoes, Labs, Certificados, XP Total, Media XP/Aluno
+3. **Grafico de atividade (ultimos 30 dias)** -- AreaChart com XP ganho por dia pelos alunos do admin
+4. **Top 10 alunos** -- Tabela com avatar, nome, XP e nivel
+5. **Metricas por curso** -- Tabela com contagem de modulos, licoes, labs e alunos atribuidos por curso
+6. **Progresso detalhado por aluno** -- Tabela completa com modulos/licoes/labs concluidos e XP
+7. **Acoes rapidas** -- Mantidas no final do dashboard
 
-## O que sera feito
+## Arquivos Alterados
 
-1. Adicionar o script do JivoChat no `index.html`, antes do fechamento do `</body>`
-2. O script carrega de forma assincrona e nao impacta a performance da pagina
-3. O widget aparecera automaticamente no canto inferior direito em todas as paginas
+| Arquivo | Acao |
+|---|---|
+| `src/hooks/useAdminData.ts` | Adicionar hooks: `useAdminReportStats`, `useAdminTopStudents`, `useAdminCourseStats`, `useAdminActivityTimeline`, `useAdminDetailedProgress` |
+| `src/components/admin/AdminOverview.tsx` | Reescrever com dashboard completo (filtro por curso, grafico, tabelas, cards) |
+
+Nenhuma migracao de banco necessaria -- todos os dados ja sao acessiveis via RLS existente para admins.
 
 ## Detalhes Tecnicos
 
-### Arquivo modificado: `index.html`
+### Novos hooks em `useAdminData.ts`
 
-Sera adicionado o seguinte snippet antes de `</body>`:
+Todos os hooks seguem o padrao existente: buscar `student_ids` via `admin_students`, depois consultar tabelas de progresso/conteudo filtrando por esses IDs.
 
-```html
-<script src="//code.jivosite.com/widget/SEU_WIDGET_ID" async></script>
-```
+- **`useAdminReportStats(courseId?)`**: Conta alunos, cursos, modulos, licoes, labs, certificados e XP total. Quando `courseId` e informado, filtra modulos/licoes/labs pelo curso.
+- **`useAdminCourseStats()`**: Lista cursos do admin com contagem de modulos, licoes, labs e alunos atribuidos (via `user_course_assignments`).
+- **`useAdminTopStudents(courseId?, limit=10)`**: Top alunos por XP. Se `courseId` informado, agrega XP de `xp_transactions` filtrado por curso.
+- **`useAdminActivityTimeline(courseId?)`**: Agrupa `xp_transactions` dos ultimos 30 dias por dia usando `date-fns format`. Se `courseId`, filtra transacoes relacionadas ao curso.
+- **`useAdminDetailedProgress(courseId?)`**: Lista completa de alunos com modulos, licoes, labs completados e XP.
 
-O `SEU_WIDGET_ID` sera substituido pelo ID real fornecido por voce.
+### Nova `AdminOverview`
 
-### Nenhuma outra alteracao necessaria
+- Utiliza `Recharts` (`AreaChart` com gradiente) e componentes de chart ja configurados (`ChartContainer`, `ChartTooltip`)
+- Layout responsivo: cards em `grid-cols-2 md:grid-cols-4`, tabelas lado a lado em `lg:grid-cols-2`
+- Tabela de progresso com scroll interno (`max-h-[400px] overflow-auto`)
+- Reutiliza os componentes UI existentes: `Card`, `Table`, `Avatar`, `Select`, `Badge`, `Skeleton`
 
-- Nao precisa de edge function, banco de dados ou backend
-- Nao precisa de chave secreta (o widget ID e publico)
-- A configuracao do chat (horarios, agentes, mensagens automaticas) e feita diretamente no painel do JivoChat
+### Filtro por curso
+
+- `Select` com valor default "all" (Todos os Cursos)
+- Opcoes populadas pelo `useAdminCourseStats` (cursos do proprio admin via RLS em `courses.owner_id`)
+- Ao mudar, todos os hooks recebem o `courseId` e re-executam via `queryKey`
 
