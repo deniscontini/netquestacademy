@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Award, Download, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadCertificateAsPdf } from "@/lib/certificatePdf";
 
 const Certificados = () => {
   const navigate = useNavigate();
