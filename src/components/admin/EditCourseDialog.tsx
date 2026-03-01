@@ -78,6 +78,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("iniciante");
   const [xpReward, setXpReward] = useState(1000);
+  const [workloadHours, setWorkloadHours] = useState(0);
   const [modules, setModules] = useState<ModuleWithContent[]>([]);
   const [openModules, setOpenModules] = useState<string[]>([]);
   const [openLessons, setOpenLessons] = useState<string[]>([]);
@@ -89,6 +90,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
       setDescription(courseData.description || "");
       setDifficulty(courseData.difficulty);
       setXpReward(courseData.xp_reward);
+      setWorkloadHours(courseData.workload_hours || 0);
       setModules(courseData.modules);
       setOpenModules([]);
       setOpenLessons([]);
