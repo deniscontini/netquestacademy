@@ -215,6 +215,7 @@ export type Database = {
           syllabus: string | null
           title: string
           updated_at: string
+          workload_hours: number
           xp_reward: number
         }
         Insert: {
@@ -232,6 +233,7 @@ export type Database = {
           syllabus?: string | null
           title: string
           updated_at?: string
+          workload_hours?: number
           xp_reward?: number
         }
         Update: {
@@ -249,6 +251,7 @@ export type Database = {
           syllabus?: string | null
           title?: string
           updated_at?: string
+          workload_hours?: number
           xp_reward?: number
         }
         Relationships: []
