@@ -147,6 +147,7 @@ export const useCourseWithContent = (courseId: string | null) => {
         description: course.description,
         difficulty: course.difficulty,
         xp_reward: course.xp_reward,
+        workload_hours: (course as any).workload_hours || 0,
         syllabus: course.syllabus,
         curriculum: course.curriculum,
         bibliography: course.bibliography,
