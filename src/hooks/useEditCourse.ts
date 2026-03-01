@@ -169,6 +169,7 @@ export const useUpdateCourse = () => {
       description: string | null;
       difficulty: string;
       xp_reward: number;
+      workload_hours: number;
       modules: ModuleWithContent[];
     }) => {
       // Update course
@@ -179,7 +180,8 @@ export const useUpdateCourse = () => {
           description: data.description,
           difficulty: data.difficulty as any,
           xp_reward: data.xp_reward,
-        })
+          workload_hours: data.workload_hours,
+        } as any)
         .eq("id", data.courseId);
 
       if (courseError) throw courseError;
