@@ -223,6 +223,7 @@ export const useSaveCourse = () => {
           curriculum: data.course.curriculum || null,
           bibliography: data.course.bibliography || null,
           pdf_url: data.pdfUrl || null,
+          workload_hours: data.course.workloadHours ? parseInt(data.course.workloadHours) : 0,
         } as any)
         .select()
         .single();

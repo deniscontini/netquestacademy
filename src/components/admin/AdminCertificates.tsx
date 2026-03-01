@@ -141,7 +141,7 @@ const AdminCertificates = () => {
             Authorization: `Bearer ${session.access_token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ certificateId: certId }),
+          body: JSON.stringify({ certificateId: certId, format: "pdf" }),
         }
       );
 
@@ -151,7 +151,7 @@ const AdminCertificates = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `certificado-${code}.svg`;
+      a.download = `certificado-${code}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
