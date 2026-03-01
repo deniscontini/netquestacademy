@@ -37,19 +37,12 @@ const Certificados = () => {
             Authorization: `Bearer ${session.access_token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ certificateId: certId, format: "pdf" }),
+          body: JSON.stringify({ certificateId: certId }),
         }
       );
       if (!response.ok) throw new Error("Falha ao gerar");
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `certificado-${code}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const svgText = await response.text();
+      await downloadCertificateAsPdf(svgText, `certificado-${code}.pdf`);
     } catch (e: any) {
       toast.error(e.message);
     }
