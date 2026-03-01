@@ -194,6 +194,10 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
                     <Input type="number" value={xpReward} onChange={(e) => setXpReward(parseInt(e.target.value) || 0)} />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Carga Horária (horas)</Label>
+                  <Input type="number" value={workloadHours} onChange={(e) => setWorkloadHours(parseInt(e.target.value) || 0)} placeholder="Ex: 40" />
+                </div>
               </div>
 
               {/* Modules */}
