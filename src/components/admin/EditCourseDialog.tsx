@@ -78,6 +78,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("iniciante");
   const [xpReward, setXpReward] = useState(1000);
+  const [workloadHours, setWorkloadHours] = useState(0);
   const [modules, setModules] = useState<ModuleWithContent[]>([]);
   const [openModules, setOpenModules] = useState<string[]>([]);
   const [openLessons, setOpenLessons] = useState<string[]>([]);
@@ -89,6 +90,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
       setDescription(courseData.description || "");
       setDifficulty(courseData.difficulty);
       setXpReward(courseData.xp_reward);
+      setWorkloadHours(courseData.workload_hours || 0);
       setModules(courseData.modules);
       setOpenModules([]);
       setOpenLessons([]);
@@ -140,6 +142,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
       description: description || null,
       difficulty,
       xp_reward: xpReward,
+      workload_hours: workloadHours,
       modules,
     });
     onOpenChange(false);
@@ -190,6 +193,10 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
                     <Label className="text-sm">XP do Curso</Label>
                     <Input type="number" value={xpReward} onChange={(e) => setXpReward(parseInt(e.target.value) || 0)} />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Carga Horária (horas)</Label>
+                  <Input type="number" value={workloadHours} onChange={(e) => setWorkloadHours(parseInt(e.target.value) || 0)} placeholder="Ex: 40" />
                 </div>
               </div>
 

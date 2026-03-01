@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Award, Download, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadCertificateAsPdf } from "@/lib/certificatePdf";
 
 const Certificados = () => {
   const navigate = useNavigate();
@@ -40,15 +41,8 @@ const Certificados = () => {
         }
       );
       if (!response.ok) throw new Error("Falha ao gerar");
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `certificado-${code}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const svgText = await response.text();
+      await downloadCertificateAsPdf(svgText, `certificado-${code}.pdf`);
     } catch (e: any) {
       toast.error(e.message);
     }

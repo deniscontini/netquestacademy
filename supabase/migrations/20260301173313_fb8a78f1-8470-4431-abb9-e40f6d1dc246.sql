@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ADD COLUMN workload_hours integer NOT NULL DEFAULT 0;

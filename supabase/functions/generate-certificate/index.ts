@@ -66,6 +66,28 @@ serve(async (req) => {
       });
     }
 
+    // Fetch course data for workload_hours
+    const { data: course } = await supabase
+      .from("courses")
+      .select("workload_hours")
+      .eq("id", cert.course_id)
+      .single();
+
+    // Fetch modules for this course
+    const { data: modules } = await supabase
+      .from("modules")
+      .select("title, order_index")
+      .eq("course_id", cert.course_id)
+      .eq("is_active", true)
+      .order("order_index");
+
+    // Fetch instructor profile (the issuer)
+    const { data: instructorProfile } = await supabase
+      .from("profiles")
+      .select("full_name, username")
+      .eq("user_id", cert.issued_by)
+      .single();
+
     const template = cert.certificate_templates || {};
     const bgColor = template.background_color || "#0a1628";
     const primaryColor = template.primary_color || "#2dd4bf";
@@ -74,101 +96,27 @@ serve(async (req) => {
     const title = template.title || "Certificado de Conclusão";
     const subtitle = template.subtitle || "Certificamos que";
     const footerText = template.footer_text || "Este certificado foi emitido digitalmente e pode ser verificado online.";
-    const signatureName = template.signature_name || "";
-    const signatureTitle = template.signature_title || "";
+    const signatureName = template.signature_name || instructorProfile?.full_name || instructorProfile?.username || "";
+    const signatureTitle = template.signature_title || "Professor / Instrutor";
+    const workloadHours = course?.workload_hours || 0;
+    const moduleList = modules || [];
+
     const completionDate = new Date(cert.completion_date).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
 
-    // Generate SVG certificate
-    const svgContent = `
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="850" viewBox="0 0 1200 850">
-  <defs>
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
-      <stop offset="100%" style="stop-color:${accentColor};stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:${bgColor};stop-opacity:1" />
-      <stop offset="100%" style="stop-color:${adjustBrightness(bgColor, 20)};stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  
-  <!-- Background -->
-  <rect width="1200" height="850" fill="url(#bgGrad)" rx="16"/>
-  
-  <!-- Border -->
-  <rect x="20" y="20" width="1160" height="810" rx="12" fill="none" stroke="url(#borderGrad)" stroke-width="3" opacity="0.6"/>
-  <rect x="35" y="35" width="1130" height="780" rx="8" fill="none" stroke="url(#borderGrad)" stroke-width="1" opacity="0.3"/>
-  
-  <!-- Corner decorations -->
-  <circle cx="60" cy="60" r="8" fill="${primaryColor}" opacity="0.5"/>
-  <circle cx="1140" cy="60" r="8" fill="${primaryColor}" opacity="0.5"/>
-  <circle cx="60" cy="790" r="8" fill="${accentColor}" opacity="0.5"/>
-  <circle cx="1140" cy="790" r="8" fill="${accentColor}" opacity="0.5"/>
-  
-  <!-- Top decorative line -->
-  <line x1="200" y1="120" x2="1000" y2="120" stroke="url(#borderGrad)" stroke-width="2" opacity="0.4"/>
-  
-  <!-- Title -->
-  <text x="600" y="180" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="48" font-weight="700" fill="${primaryColor}">
-    ${escapeXml(title)}
-  </text>
-  
-  <!-- Subtitle -->
-  <text x="600" y="260" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="22" fill="#94a3b8">
-    ${escapeXml(subtitle)}
-  </text>
-  
-  <!-- Student Name -->
-  <text x="600" y="340" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="42" font-weight="600" fill="#f8fafc">
-    ${escapeXml(cert.student_name)}
-  </text>
-  
-  <!-- Name underline -->
-  <line x1="250" y1="360" x2="950" y2="360" stroke="${primaryColor}" stroke-width="1" opacity="0.3"/>
-  
-  <!-- Course description -->
-  <text x="600" y="420" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="20" fill="#94a3b8">
-    concluiu com êxito o curso
-  </text>
-  
-  <!-- Course Title -->
-  <text x="600" y="480" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="32" font-weight="600" fill="${accentColor}">
-    ${escapeXml(cert.course_title)}
-  </text>
-  
-  <!-- Date -->
-  <text x="600" y="550" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="18" fill="#64748b">
-    em ${completionDate}
-  </text>
-  
-  <!-- Bottom decorative line -->
-  <line x1="200" y1="600" x2="1000" y2="600" stroke="url(#borderGrad)" stroke-width="1" opacity="0.3"/>
-  
-  <!-- Signature -->
-  ${signatureName ? `
-  <line x1="400" y1="700" x2="800" y2="700" stroke="#475569" stroke-width="1"/>
-  <text x="600" y="730" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="18" font-weight="600" fill="#e2e8f0">
-    ${escapeXml(signatureName)}
-  </text>
-  <text x="600" y="755" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="14" fill="#64748b">
-    ${escapeXml(signatureTitle)}
-  </text>
-  ` : ""}
-  
-  <!-- Certificate Code -->
-  <text x="600" y="800" text-anchor="middle" font-family="monospace" font-size="12" fill="#475569">
-    Código de verificação: ${cert.certificate_code}
-  </text>
-  
-  <!-- Footer -->
-  <text x="600" y="825" text-anchor="middle" font-family="${fontFamily}, sans-serif" font-size="11" fill="#334155">
-    ${escapeXml(footerText)}
-  </text>
-</svg>`;
+    const svgContent = generateSvg({
+      bgColor, primaryColor, accentColor, fontFamily,
+      title, subtitle, footerText, signatureName, signatureTitle,
+      studentName: cert.student_name,
+      courseTitle: cert.course_title,
+      completionDate,
+      certificateCode: cert.certificate_code,
+      workloadHours,
+      modules: moduleList,
+    });
 
     return new Response(svgContent, {
       headers: {
@@ -188,6 +136,116 @@ serve(async (req) => {
     );
   }
 });
+
+interface CertData {
+  bgColor: string;
+  primaryColor: string;
+  accentColor: string;
+  fontFamily: string;
+  title: string;
+  subtitle: string;
+  footerText: string;
+  signatureName: string;
+  signatureTitle: string;
+  studentName: string;
+  courseTitle: string;
+  completionDate: string;
+  certificateCode: string;
+  workloadHours: number;
+  modules: { title: string; order_index: number }[];
+}
+
+function generateSvg(d: CertData): string {
+  const moduleListItems = d.modules.map((m, i) => {
+    const y = 530 + i * 18;
+    return `<text x="320" y="${y}" font-family="${d.fontFamily}, sans-serif" font-size="12" fill="#cbd5e1">• ${escapeXml(m.title)}</text>`;
+  }).join("\n  ");
+
+  const moduleSectionHeight = Math.max(0, (d.modules.length - 6) * 18);
+  const totalHeight = 900 + moduleSectionHeight;
+  const signatureY = 530 + d.modules.length * 18 + 50;
+  const codeY = signatureY + 80;
+  const footerY = codeY + 25;
+  const bottomLineY = signatureY - 20;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="${totalHeight}" viewBox="0 0 1200 ${totalHeight}">
+  <defs>
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:${d.primaryColor};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:${d.accentColor};stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:${d.bgColor};stop-opacity:1" />
+      <stop offset="100%" style="stop-color:${adjustBrightness(d.bgColor, 20)};stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="${totalHeight}" fill="url(#bgGrad)" rx="16"/>
+  <rect x="20" y="20" width="1160" height="${totalHeight - 40}" rx="12" fill="none" stroke="url(#borderGrad)" stroke-width="3" opacity="0.6"/>
+  <rect x="35" y="35" width="1130" height="${totalHeight - 70}" rx="8" fill="none" stroke="url(#borderGrad)" stroke-width="1" opacity="0.3"/>
+  
+  <circle cx="60" cy="60" r="8" fill="${d.primaryColor}" opacity="0.5"/>
+  <circle cx="1140" cy="60" r="8" fill="${d.primaryColor}" opacity="0.5"/>
+  <circle cx="60" cy="${totalHeight - 60}" r="8" fill="${d.accentColor}" opacity="0.5"/>
+  <circle cx="1140" cy="${totalHeight - 60}" r="8" fill="${d.accentColor}" opacity="0.5"/>
+  
+  <line x1="200" y1="100" x2="1000" y2="100" stroke="url(#borderGrad)" stroke-width="2" opacity="0.4"/>
+  
+  <text x="600" y="155" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="44" font-weight="700" fill="${d.primaryColor}">
+    ${escapeXml(d.title)}
+  </text>
+  
+  <text x="600" y="215" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="20" fill="#94a3b8">
+    ${escapeXml(d.subtitle)}
+  </text>
+  
+  <text x="600" y="280" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="38" font-weight="600" fill="#f8fafc">
+    ${escapeXml(d.studentName)}
+  </text>
+  
+  <line x1="250" y1="298" x2="950" y2="298" stroke="${d.primaryColor}" stroke-width="1" opacity="0.3"/>
+  
+  <text x="600" y="345" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" fill="#94a3b8">
+    concluiu com êxito o curso
+  </text>
+  
+  <text x="600" y="390" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="30" font-weight="600" fill="${d.accentColor}">
+    ${escapeXml(d.courseTitle)}
+  </text>
+  
+  <text x="600" y="435" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="16" fill="#64748b">
+    em ${d.completionDate}${d.workloadHours > 0 ? ` — Carga Horária: ${d.workloadHours}h` : ""}
+  </text>
+  
+  ${d.modules.length > 0 ? `
+  <line x1="280" y1="465" x2="920" y2="465" stroke="url(#borderGrad)" stroke-width="1" opacity="0.2"/>
+  <text x="600" y="495" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="14" font-weight="600" fill="#94a3b8" letter-spacing="2">
+    CONTEÚDO PROGRAMÁTICO
+  </text>
+  ${moduleListItems}
+  ` : ""}
+  
+  <line x1="200" y1="${bottomLineY}" x2="1000" y2="${bottomLineY}" stroke="url(#borderGrad)" stroke-width="1" opacity="0.3"/>
+  
+  ${d.signatureName ? `
+  <line x1="400" y1="${signatureY + 10}" x2="800" y2="${signatureY + 10}" stroke="#475569" stroke-width="1"/>
+  <text x="600" y="${signatureY + 35}" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" font-weight="600" fill="#e2e8f0">
+    ${escapeXml(d.signatureName)}
+  </text>
+  <text x="600" y="${signatureY + 55}" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="13" fill="#64748b">
+    ${escapeXml(d.signatureTitle)}
+  </text>
+  ` : ""}
+  
+  <text x="600" y="${codeY}" text-anchor="middle" font-family="monospace" font-size="12" fill="#475569">
+    Código de verificação: ${d.certificateCode}
+  </text>
+  
+  <text x="600" y="${footerY}" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="11" fill="#334155">
+    ${escapeXml(d.footerText)}
+  </text>
+</svg>`;
+}
 
 function escapeXml(str: string): string {
   return str

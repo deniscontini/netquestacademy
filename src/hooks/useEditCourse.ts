@@ -9,6 +9,7 @@ export interface CourseWithContent {
   description: string | null;
   difficulty: string;
   xp_reward: number;
+  workload_hours: number;
   syllabus: string | null;
   curriculum: string | null;
   bibliography: string | null;
@@ -146,6 +147,7 @@ export const useCourseWithContent = (courseId: string | null) => {
         description: course.description,
         difficulty: course.difficulty,
         xp_reward: course.xp_reward,
+        workload_hours: (course as any).workload_hours || 0,
         syllabus: course.syllabus,
         curriculum: course.curriculum,
         bibliography: course.bibliography,
@@ -167,6 +169,7 @@ export const useUpdateCourse = () => {
       description: string | null;
       difficulty: string;
       xp_reward: number;
+      workload_hours: number;
       modules: ModuleWithContent[];
     }) => {
       // Update course
@@ -177,7 +180,8 @@ export const useUpdateCourse = () => {
           description: data.description,
           difficulty: data.difficulty as any,
           xp_reward: data.xp_reward,
-        })
+          workload_hours: data.workload_hours,
+        } as any)
         .eq("id", data.courseId);
 
       if (courseError) throw courseError;

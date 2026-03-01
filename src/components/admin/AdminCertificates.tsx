@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Award, Plus, Palette, Send, Trash2, Lock, Download } from "lucide-react";
+import { downloadCertificateAsPdf } from "@/lib/certificatePdf";
 import { useCourses } from "@/hooks/useCourses";
 import { useAdminUsers } from "@/hooks/useAdminData";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
@@ -147,15 +148,8 @@ const AdminCertificates = () => {
 
       if (!response.ok) throw new Error("Falha ao gerar certificado");
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `certificado-${code}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const svgText = await response.text();
+      await downloadCertificateAsPdf(svgText, `certificado-${code}.pdf`);
     } catch (e: any) {
       toast.error(e.message);
     }
