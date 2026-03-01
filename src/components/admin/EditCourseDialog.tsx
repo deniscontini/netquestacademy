@@ -142,6 +142,7 @@ const EditCourseDialog = ({ courseId, open, onOpenChange }: EditCourseDialogProp
       description: description || null,
       difficulty,
       xp_reward: xpReward,
+      workload_hours: workloadHours,
       modules,
     });
     onOpenChange(false);
