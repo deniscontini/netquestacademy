@@ -9,6 +9,7 @@ export interface CourseWithContent {
   description: string | null;
   difficulty: string;
   xp_reward: number;
+  workload_hours: number;
   syllabus: string | null;
   curriculum: string | null;
   bibliography: string | null;
