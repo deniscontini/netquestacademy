@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Award, Plus, Palette, Send, Trash2, Lock, Download } from "lucide-react";
+import { downloadCertificateAsPdf } from "@/lib/certificatePdf";
 import { useCourses } from "@/hooks/useCourses";
 import { useAdminUsers } from "@/hooks/useAdminData";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
