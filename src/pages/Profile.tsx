@@ -80,6 +80,7 @@ const Profile = () => {
         full_name: profile.full_name || "",
         avatar_url: profile.avatar_url || "",
       });
+      setSignatureUrl((profile as any).signature_image_url || null);
     }
   }, [profile]);
 
