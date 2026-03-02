@@ -103,7 +103,7 @@ serve(async (req) => {
     }
 
     const template = cert.certificate_templates || {};
-    const bgColor = template.background_color || "#0a1628";
+    const bgColor = template.background_color || "#ffffff";
     const primaryColor = template.primary_color || "#2dd4bf";
     const accentColor = template.accent_color || "#22c55e";
     const fontFamily = template.font_family || "Space Grotesk";
