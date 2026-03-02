@@ -493,6 +493,7 @@ export type Database = {
           id: string
           last_activity_at: string | null
           level: number
+          signature_image_url: string | null
           streak_days: number
           updated_at: string
           user_id: string
@@ -506,6 +507,7 @@ export type Database = {
           id?: string
           last_activity_at?: string | null
           level?: number
+          signature_image_url?: string | null
           streak_days?: number
           updated_at?: string
           user_id: string
@@ -519,6 +521,7 @@ export type Database = {
           id?: string
           last_activity_at?: string | null
           level?: number
+          signature_image_url?: string | null
           streak_days?: number
           updated_at?: string
           user_id?: string
@@ -1134,6 +1137,19 @@ export type Database = {
         Returns: boolean
       }
       sanitize_quiz_options: { Args: { options: Json }; Returns: Json }
+      validate_certificate_by_code: {
+        Args: { p_code: string }
+        Returns: {
+          certificate_code: string
+          completion_date: string
+          course_title: string
+          issued_at: string
+          issuer_name: string
+          issuer_signature_title: string
+          student_name: string
+          workload_hours: number
+        }[]
+      }
       verify_quiz_answer: {
         Args: { p_question_id: string; p_selected_option_id: string }
         Returns: Json

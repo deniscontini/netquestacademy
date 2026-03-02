@@ -84,9 +84,23 @@ serve(async (req) => {
     // Fetch instructor profile (the issuer)
     const { data: instructorProfile } = await supabase
       .from("profiles")
-      .select("full_name, username")
+      .select("full_name, username, signature_image_url")
       .eq("user_id", cert.issued_by)
       .single();
+
+    // Fetch signature image as base64 if available
+    let signatureImageBase64 = "";
+    const sigUrl = (instructorProfile as any)?.signature_image_url;
+    if (sigUrl) {
+      try {
+        const sigResponse = await fetch(sigUrl.split("?")[0]);
+        if (sigResponse.ok) {
+          const sigBuffer = await sigResponse.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(sigBuffer)));
+          signatureImageBase64 = `data:image/png;base64,${base64}`;
+        }
+      } catch { /* ignore fetch errors */ }
+    }
 
     const template = cert.certificate_templates || {};
     const bgColor = template.background_color || "#0a1628";
@@ -116,6 +130,7 @@ serve(async (req) => {
       certificateCode: cert.certificate_code,
       workloadHours,
       modules: moduleList,
+      signatureImageBase64,
     });
 
     return new Response(svgContent, {
@@ -153,6 +168,7 @@ interface CertData {
   certificateCode: string;
   workloadHours: number;
   modules: { title: string; order_index: number }[];
+  signatureImageBase64: string;
 }
 
 function generateSvg(d: CertData): string {
@@ -227,6 +243,9 @@ function generateSvg(d: CertData): string {
   
   <line x1="200" y1="${bottomLineY}" x2="1000" y2="${bottomLineY}" stroke="url(#borderGrad)" stroke-width="1" opacity="0.3"/>
   
+  ${d.signatureImageBase64 ? `
+  <image x="450" y="${signatureY - 60}" width="300" height="80" href="${d.signatureImageBase64}" preserveAspectRatio="xMidYMid meet"/>
+  ` : ""}
   ${d.signatureName ? `
   <line x1="400" y1="${signatureY + 10}" x2="800" y2="${signatureY + 10}" stroke="#475569" stroke-width="1"/>
   <text x="600" y="${signatureY + 35}" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" font-weight="600" fill="#e2e8f0">

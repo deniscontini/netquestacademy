@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import Conquistas from "./pages/Conquistas";
 import Certificados from "./pages/Certificados";
+import ValidarCertificado from "./pages/ValidarCertificado";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/perfil" element={<Profile />} />
             <Route path="/conquistas" element={<Conquistas />} />
             <Route path="/certificados" element={<Certificados />} />
+            <Route path="/validar-certificado" element={<ValidarCertificado />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

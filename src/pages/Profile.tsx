@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import DashboardNavbar from "@/components/DashboardNavbar";
+import SignatureUpload from "@/components/admin/SignatureUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +53,8 @@ const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { isAdmin } = useIsAdmin();
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -76,6 +80,7 @@ const Profile = () => {
         full_name: profile.full_name || "",
         avatar_url: profile.avatar_url || "",
       });
+      setSignatureUrl((profile as any).signature_image_url || null);
     }
   }, [profile]);
 
@@ -301,6 +306,17 @@ const Profile = () => {
                     </div>
 
                     <Separator />
+
+                    {/* Assinatura (só admins) */}
+                    {isAdmin && (
+                      <>
+                        <SignatureUpload
+                          currentUrl={signatureUrl}
+                          onUploaded={setSignatureUrl}
+                        />
+                        <Separator />
+                      </>
+                    )}
 
                     {/* Alterar Senha */}
                     <div className="space-y-3">
