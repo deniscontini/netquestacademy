@@ -84,9 +84,23 @@ serve(async (req) => {
     // Fetch instructor profile (the issuer)
     const { data: instructorProfile } = await supabase
       .from("profiles")
-      .select("full_name, username")
+      .select("full_name, username, signature_image_url")
       .eq("user_id", cert.issued_by)
       .single();
+
+    // Fetch signature image as base64 if available
+    let signatureImageBase64 = "";
+    const sigUrl = (instructorProfile as any)?.signature_image_url;
+    if (sigUrl) {
+      try {
+        const sigResponse = await fetch(sigUrl.split("?")[0]);
+        if (sigResponse.ok) {
+          const sigBuffer = await sigResponse.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(sigBuffer)));
+          signatureImageBase64 = `data:image/png;base64,${base64}`;
+        }
+      } catch { /* ignore fetch errors */ }
+    }
 
     const template = cert.certificate_templates || {};
     const bgColor = template.background_color || "#0a1628";
