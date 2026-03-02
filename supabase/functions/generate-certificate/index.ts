@@ -211,7 +211,7 @@ function generateSvg(d: CertData): string {
     ${escapeXml(d.title)}
   </text>
   
-  <text x="600" y="215" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="20" fill="#94a3b8">
+  <text x="600" y="215" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="20" fill="#64748b">
     ${escapeXml(d.subtitle)}
   </text>
   
