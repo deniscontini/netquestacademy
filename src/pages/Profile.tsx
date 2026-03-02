@@ -53,6 +53,8 @@ const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { isAdmin } = useIsAdmin();
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     username: "",
