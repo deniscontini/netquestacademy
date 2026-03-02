@@ -103,7 +103,7 @@ serve(async (req) => {
     }
 
     const template = cert.certificate_templates || {};
-    const bgColor = template.background_color || "#0a1628";
+    const bgColor = template.background_color || "#ffffff";
     const primaryColor = template.primary_color || "#2dd4bf";
     const accentColor = template.accent_color || "#22c55e";
     const fontFamily = template.font_family || "Space Grotesk";
@@ -174,7 +174,7 @@ interface CertData {
 function generateSvg(d: CertData): string {
   const moduleListItems = d.modules.map((m, i) => {
     const y = 530 + i * 18;
-    return `<text x="320" y="${y}" font-family="${d.fontFamily}, sans-serif" font-size="12" fill="#cbd5e1">• ${escapeXml(m.title)}</text>`;
+    return `<text x="320" y="${y}" font-family="${d.fontFamily}, sans-serif" font-size="12" fill="#475569">• ${escapeXml(m.title)}</text>`;
   }).join("\n  ");
 
   const moduleSectionHeight = Math.max(0, (d.modules.length - 6) * 18);
@@ -211,17 +211,17 @@ function generateSvg(d: CertData): string {
     ${escapeXml(d.title)}
   </text>
   
-  <text x="600" y="215" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="20" fill="#94a3b8">
+  <text x="600" y="215" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="20" fill="#64748b">
     ${escapeXml(d.subtitle)}
   </text>
   
-  <text x="600" y="280" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="38" font-weight="600" fill="#f8fafc">
+  <text x="600" y="280" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="38" font-weight="600" fill="#1e293b">
     ${escapeXml(d.studentName)}
   </text>
   
   <line x1="250" y1="298" x2="950" y2="298" stroke="${d.primaryColor}" stroke-width="1" opacity="0.3"/>
   
-  <text x="600" y="345" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" fill="#94a3b8">
+  <text x="600" y="345" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" fill="#64748b">
     concluiu com êxito o curso
   </text>
   
