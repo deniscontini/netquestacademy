@@ -221,7 +221,7 @@ function generateSvg(d: CertData): string {
   
   <line x1="250" y1="298" x2="950" y2="298" stroke="${d.primaryColor}" stroke-width="1" opacity="0.3"/>
   
-  <text x="600" y="345" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" fill="#94a3b8">
+  <text x="600" y="345" text-anchor="middle" font-family="${d.fontFamily}, sans-serif" font-size="18" fill="#64748b">
     concluiu com êxito o curso
   </text>
   
