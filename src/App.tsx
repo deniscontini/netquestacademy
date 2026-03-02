@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import Conquistas from "./pages/Conquistas";
 import Certificados from "./pages/Certificados";
+import ValidarCertificado from "./pages/ValidarCertificado";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
