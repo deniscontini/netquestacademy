@@ -130,6 +130,7 @@ serve(async (req) => {
       certificateCode: cert.certificate_code,
       workloadHours,
       modules: moduleList,
+      signatureImageBase64,
     });
 
     return new Response(svgContent, {
