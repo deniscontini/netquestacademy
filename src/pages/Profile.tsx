@@ -307,6 +307,17 @@ const Profile = () => {
 
                     <Separator />
 
+                    {/* Assinatura (só admins) */}
+                    {isAdmin && (
+                      <>
+                        <SignatureUpload
+                          currentUrl={signatureUrl}
+                          onUploaded={setSignatureUrl}
+                        />
+                        <Separator />
+                      </>
+                    )}
+
                     {/* Alterar Senha */}
                     <div className="space-y-3">
                       <Label className="flex items-center gap-2">
