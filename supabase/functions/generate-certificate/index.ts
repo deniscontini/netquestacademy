@@ -168,6 +168,7 @@ interface CertData {
   certificateCode: string;
   workloadHours: number;
   modules: { title: string; order_index: number }[];
+  signatureImageBase64: string;
 }
 
 function generateSvg(d: CertData): string {
