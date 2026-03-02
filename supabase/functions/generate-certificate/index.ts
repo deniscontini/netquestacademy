@@ -174,7 +174,7 @@ interface CertData {
 function generateSvg(d: CertData): string {
   const moduleListItems = d.modules.map((m, i) => {
     const y = 530 + i * 18;
-    return `<text x="320" y="${y}" font-family="${d.fontFamily}, sans-serif" font-size="12" fill="#cbd5e1">• ${escapeXml(m.title)}</text>`;
+    return `<text x="320" y="${y}" font-family="${d.fontFamily}, sans-serif" font-size="12" fill="#475569">• ${escapeXml(m.title)}</text>`;
   }).join("\n  ");
 
   const moduleSectionHeight = Math.max(0, (d.modules.length - 6) * 18);
