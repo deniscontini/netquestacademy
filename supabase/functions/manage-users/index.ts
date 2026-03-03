@@ -126,8 +126,9 @@ Deno.serve(async (req) => {
         });
 
         if (createError) {
+          console.error("[manage-users] create-admin error:", createError.message);
           return new Response(
-            JSON.stringify({ error: createError.message }),
+            JSON.stringify({ error: sanitizeError(createError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
