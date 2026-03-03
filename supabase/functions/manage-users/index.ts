@@ -523,7 +523,8 @@ Deno.serve(async (req) => {
           });
 
           if (createError) {
-            results.push({ email: user.email, success: false, error: createError.message });
+            console.error("[manage-users] batch-create error:", createError.message);
+            results.push({ email: user.email, success: false, error: sanitizeError(createError) });
           } else {
             if (newUser.user) {
               if (user.role === "admin") {
