@@ -196,8 +196,9 @@ Deno.serve(async (req) => {
             .eq("user_id", userId);
 
           if (updateError) {
+            console.error("[manage-users] update-admin error:", updateError.message);
             return new Response(
-              JSON.stringify({ error: updateError.message }),
+              JSON.stringify({ error: sanitizeError(updateError) }),
               { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
