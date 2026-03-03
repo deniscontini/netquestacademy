@@ -43,6 +43,7 @@ const App = () => (
             <Route path="/certificados" element={<Certificados />} />
             <Route path="/validar-certificado" element={<ValidarCertificado />} />
             <Route path="/redefinir-senha" element={<ResetPassword />} />
+            <Route path="/tutorial" element={<Tutorial />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
