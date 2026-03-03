@@ -608,9 +608,9 @@ Deno.serve(async (req) => {
         );
     }
   } catch (error) {
-    console.error("Error in manage-users function:", error);
+    console.error("[manage-users] Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: "Erro interno do servidor" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
