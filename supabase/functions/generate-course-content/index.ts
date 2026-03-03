@@ -679,9 +679,9 @@ NÃO gere código executável ou scripts completos. Apenas comandos de verifica�
       },
     });
   } catch (error) {
-    console.error("generate-course-content error:", error);
+    console.error("[generate-course-content] Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro desconhecido" }),
+      JSON.stringify({ error: "Erro interno ao gerar conteúdo. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

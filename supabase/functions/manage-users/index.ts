@@ -32,6 +32,16 @@ interface BatchDeleteUsersRequest {
   userIds: string[];
 }
 
+function sanitizeError(error: any): string {
+  const msg = typeof error === "string" ? error : error?.message || "";
+  if (msg.includes("already registered") || msg.includes("already been registered")) return "Este email já está cadastrado";
+  if (msg.includes("invalid email")) return "Email inválido";
+  if (msg.includes("password")) return "Senha inválida ou muito fraca";
+  if (msg.includes("not found") || msg.includes("User not found")) return "Usuário não encontrado";
+  if (msg.includes("rate limit") || msg.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
+  return "Não foi possível processar a solicitação";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -116,8 +126,9 @@ Deno.serve(async (req) => {
         });
 
         if (createError) {
+          console.error("[manage-users] create-admin error:", createError.message);
           return new Response(
-            JSON.stringify({ error: createError.message }),
+            JSON.stringify({ error: sanitizeError(createError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -185,8 +196,9 @@ Deno.serve(async (req) => {
             .eq("user_id", userId);
 
           if (updateError) {
+            console.error("[manage-users] update-admin error:", updateError.message);
             return new Response(
-              JSON.stringify({ error: updateError.message }),
+              JSON.stringify({ error: sanitizeError(updateError) }),
               { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           }
@@ -247,8 +259,9 @@ Deno.serve(async (req) => {
           );
 
         if (planError) {
+          console.error("[manage-users] update-admin-plan error:", planError.message);
           return new Response(
-            JSON.stringify({ error: planError.message }),
+            JSON.stringify({ error: sanitizeError(planError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -309,8 +322,9 @@ Deno.serve(async (req) => {
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(body.userId);
 
         if (deleteError) {
+          console.error("[manage-users] delete-admin error:", deleteError.message);
           return new Response(
-            JSON.stringify({ error: deleteError.message }),
+            JSON.stringify({ error: sanitizeError(deleteError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -374,8 +388,9 @@ Deno.serve(async (req) => {
         });
 
         if (createError) {
+          console.error("[manage-users] create error:", createError.message);
           return new Response(
-            JSON.stringify({ error: createError.message }),
+            JSON.stringify({ error: sanitizeError(createError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -442,8 +457,9 @@ Deno.serve(async (req) => {
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(body.userId);
 
         if (deleteError) {
+          console.error("[manage-users] delete error:", deleteError.message);
           return new Response(
-            JSON.stringify({ error: deleteError.message }),
+            JSON.stringify({ error: sanitizeError(deleteError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -507,7 +523,8 @@ Deno.serve(async (req) => {
           });
 
           if (createError) {
-            results.push({ email: user.email, success: false, error: createError.message });
+            console.error("[manage-users] batch-create error:", createError.message);
+            results.push({ email: user.email, success: false, error: sanitizeError(createError) });
           } else {
             if (newUser.user) {
               if (user.role === "admin") {
@@ -567,7 +584,8 @@ Deno.serve(async (req) => {
           const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
           if (deleteError) {
-            results.push({ userId, success: false, error: deleteError.message });
+            console.error("[manage-users] batch-delete error:", deleteError.message);
+            results.push({ userId, success: false, error: sanitizeError(deleteError) });
           } else {
             results.push({ userId, success: true });
           }
@@ -590,9 +608,9 @@ Deno.serve(async (req) => {
         );
     }
   } catch (error) {
-    console.error("Error in manage-users function:", error);
+    console.error("[manage-users] Unhandled error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Internal server error" }),
+      JSON.stringify({ error: "Erro interno do servidor" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
