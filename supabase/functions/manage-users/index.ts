@@ -584,7 +584,8 @@ Deno.serve(async (req) => {
           const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
           if (deleteError) {
-            results.push({ userId, success: false, error: deleteError.message });
+            console.error("[manage-users] batch-delete error:", deleteError.message);
+            results.push({ userId, success: false, error: sanitizeError(deleteError) });
           } else {
             results.push({ userId, success: true });
           }
