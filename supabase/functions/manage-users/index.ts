@@ -457,8 +457,9 @@ Deno.serve(async (req) => {
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(body.userId);
 
         if (deleteError) {
+          console.error("[manage-users] delete error:", deleteError.message);
           return new Response(
-            JSON.stringify({ error: deleteError.message }),
+            JSON.stringify({ error: sanitizeError(deleteError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
