@@ -32,6 +32,16 @@ interface BatchDeleteUsersRequest {
   userIds: string[];
 }
 
+function sanitizeError(error: any): string {
+  const msg = typeof error === "string" ? error : error?.message || "";
+  if (msg.includes("already registered") || msg.includes("already been registered")) return "Este email já está cadastrado";
+  if (msg.includes("invalid email")) return "Email inválido";
+  if (msg.includes("password")) return "Senha inválida ou muito fraca";
+  if (msg.includes("not found") || msg.includes("User not found")) return "Usuário não encontrado";
+  if (msg.includes("rate limit") || msg.includes("too many")) return "Muitas tentativas. Aguarde alguns minutos.";
+  return "Não foi possível processar a solicitação";
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
