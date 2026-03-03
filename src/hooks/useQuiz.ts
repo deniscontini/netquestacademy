@@ -129,29 +129,15 @@ export const useCompleteQuiz = () => {
 
       if (error) throw error;
 
-      // Add XP transaction
+      // Add XP atomically via RPC to prevent race conditions
       if (xpEarned > 0) {
-        await supabase.from("xp_transactions").insert({
-          user_id: user.id,
-          amount: xpEarned,
-          source_type: "quiz",
-          source_id: lessonId,
-          description: `Quiz concluído com ${score}/${totalQuestions} acertos`,
+        await supabase.rpc("add_user_xp", {
+          p_user_id: user.id,
+          p_amount: xpEarned,
+          p_source_type: "quiz",
+          p_source_id: lessonId,
+          p_description: `Quiz concluído com ${score}/${totalQuestions} acertos`,
         });
-
-        // Update profile XP
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("xp")
-          .eq("user_id", user.id)
-          .single();
-
-        if (profile) {
-          await supabase
-            .from("profiles")
-            .update({ xp: profile.xp + xpEarned })
-            .eq("user_id", user.id);
-        }
       }
 
       return data;

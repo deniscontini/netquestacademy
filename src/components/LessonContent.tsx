@@ -403,6 +403,26 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
       const linkMatch = part.match(/\[([^\]]+)\]\(([^)]+)\)/);
       if (linkMatch) {
         const linkUrl = linkMatch[2];
+        const linkText = linkMatch[1];
+
+        // Validate URL scheme to prevent javascript: and data: injection
+        const isSafeUrl = (url: string): boolean => {
+          try {
+            const parsed = new URL(url, window.location.href);
+            return ['http:', 'https:', 'mailto:'].includes(parsed.protocol);
+          } catch {
+            return false;
+          }
+        };
+
+        if (!isSafeUrl(linkUrl)) {
+          return (
+            <span key={i} className="text-muted-foreground" title="Invalid URL">
+              {linkText}
+            </span>
+          );
+        }
+
         // Check if it's a YouTube link and render as embedded video
         const ytMatch = linkUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/);
         if (ytMatch) {
@@ -411,21 +431,21 @@ const LessonContent = ({ lesson, lessonIndex, isCompleted, onBack, onComplete }:
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
                 <iframe
                   src={`https://www.youtube.com/embed/${ytMatch[1]}?rel=0`}
-                  title={linkMatch[1]}
+                  title={linkText}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute inset-0 w-full h-full"
                 />
               </div>
               <div className="px-3 py-2 bg-muted/30 text-xs text-muted-foreground">
-                🎬 {linkMatch[1]}
+                🎬 {linkText}
               </div>
             </div>
           );
         }
         return (
           <a key={i} href={linkUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-            {linkMatch[1]}
+            {linkText}
           </a>
         );
       }

@@ -21,38 +21,19 @@ export const useAddXP = () => {
     }) => {
       if (!user) throw new Error("Not authenticated");
 
-      // Record XP transaction
-      const { error: txError } = await supabase
-        .from("xp_transactions")
-        .insert({
-          user_id: user.id,
-          amount,
-          source_type: sourceType,
-          source_id: sourceId,
-          description,
-        });
+      // Use atomic RPC to prevent race conditions
+      const { data, error } = await supabase.rpc("add_user_xp", {
+        p_user_id: user.id,
+        p_amount: amount,
+        p_source_type: sourceType,
+        p_source_id: sourceId || null,
+        p_description: description || null,
+      });
 
-      if (txError) throw txError;
+      if (error) throw error;
 
-      // Update profile XP
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("xp")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      const newXP = (profile?.xp || 0) + amount;
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ xp: newXP, last_activity_at: new Date().toISOString() })
-        .eq("user_id", user.id);
-
-      if (updateError) throw updateError;
-
-      return { newXP, amount };
+      const result = data?.[0] || { new_xp: amount, new_level: 1 };
+      return { newXP: result.new_xp, amount };
     },
     onSuccess: ({ amount }) => {
       queryClient.invalidateQueries({ queryKey: ["profile"] });

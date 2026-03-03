@@ -1080,6 +1080,19 @@ export type Database = {
       }
     }
     Functions: {
+      add_user_xp: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_source_id?: string
+          p_source_type: string
+          p_user_id: string
+        }
+        Returns: {
+          new_level: number
+          new_xp: number
+        }[]
+      }
       award_achievement: {
         Args: { p_achievement_id: string; p_user_id: string }
         Returns: boolean
