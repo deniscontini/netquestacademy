@@ -259,8 +259,9 @@ Deno.serve(async (req) => {
           );
 
         if (planError) {
+          console.error("[manage-users] update-admin-plan error:", planError.message);
           return new Response(
-            JSON.stringify({ error: planError.message }),
+            JSON.stringify({ error: sanitizeError(planError) }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
