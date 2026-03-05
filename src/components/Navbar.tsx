@@ -37,6 +37,7 @@ const Navbar = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             {user ? (
               <Button variant="hero" onClick={() => navigate("/dashboard")}>
                 Ir para Dashboard

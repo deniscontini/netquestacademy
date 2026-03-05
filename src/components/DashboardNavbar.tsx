@@ -76,6 +76,7 @@ const DashboardNavbar = () => {
 
           {/* User Menu */}
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Badge variant="xp" className="hidden sm:flex gap-1 font-mono">
               {profile?.xp || 0} XP
             </Badge>
