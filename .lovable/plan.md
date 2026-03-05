@@ -1,42 +1,36 @@
 
 
-## Plano: Toggle de Modo Claro / Escuro
+# Integracao do JivoChat
 
-### Situação Atual
-- O app usa apenas tema escuro, com variáveis CSS em `:root` já configuradas para cores escuras.
-- A classe `.dark` existe mas repete os mesmos valores do `:root`.
-- `next-themes` já está instalado no projeto mas não está sendo usado.
-- `tailwind.config.ts` já tem `darkMode: ["class"]` configurado.
+## Visao Geral
 
-### O que será feito
+Adicionar o widget do JivoChat ao SaaS inserindo o snippet oficial no `index.html`. O JivoChat aparecera como um botao flutuante de atendimento em todas as paginas, sem necessidade de backend ou edge functions.
 
-**1. Reestruturar as variáveis CSS em `src/index.css`**
-- Mover as cores escuras atuais para dentro da classe `.dark`
-- Criar variáveis de modo claro no `:root` com um layout limpo: fundo branco/cinza claro, textos escuros, cards claros, bordas suaves, mantendo o ciano/teal como cor primária e verde como accent.
+## Pre-requisito
 
-**2. Criar um componente `ThemeToggle`**
-- Botão com ícones de Sol/Lua usando `next-themes` (`useTheme`)
-- Compacto, posicionado nas navbars
+Voce precisa ter uma conta no JivoChat (https://www.jivochat.com.br) e obter o **Widget ID** do seu canal. Ele esta disponivel no painel do JivoChat em Configuracoes > Canais > Site > Codigo de instalacao. O ID e o valor dentro do script, algo como `//code.jivosite.com/widget/XXXXXX`.
 
-**3. Adicionar `ThemeProvider` no `App.tsx`**
-- Wrapping com `<ThemeProvider>` do `next-themes` com `attribute="class"`, `defaultTheme="dark"`, `storageKey="techops-theme"`
+## O que sera feito
 
-**4. Inserir o toggle nas navbars**
-- `Navbar.tsx` (landing page): toggle ao lado dos botões de CTA
-- `DashboardNavbar.tsx` (área logada): toggle ao lado do badge de XP
+1. Adicionar o script do JivoChat no `index.html`, antes do fechamento do `</body>`
+2. O script carrega de forma assincrona e nao impacta a performance da pagina
+3. O widget aparecera automaticamente no canto inferior direito em todas as paginas
 
-### Paleta do Modo Claro
-| Token | Valor |
-|-------|-------|
-| background | 0 0% 100% (branco) |
-| foreground | 222 47% 11% (quase preto) |
-| card | 210 20% 98% (cinza bem claro) |
-| muted | 210 20% 94% |
-| muted-foreground | 215 16% 47% |
-| border | 214 20% 88% |
-| secondary | 210 20% 94% |
-| primary | 175 80% 40% (ciano levemente mais escuro para contraste) |
-| accent | 142 70% 38% |
+## Detalhes Tecnicos
 
-Isso garante contraste adequado e mantém a identidade visual com ciano/teal.
+### Arquivo modificado: `index.html`
+
+Sera adicionado o seguinte snippet antes de `</body>`:
+
+```html
+<script src="//code.jivosite.com/widget/SEU_WIDGET_ID" async></script>
+```
+
+O `SEU_WIDGET_ID` sera substituido pelo ID real fornecido por voce.
+
+### Nenhuma outra alteracao necessaria
+
+- Nao precisa de edge function, banco de dados ou backend
+- Nao precisa de chave secreta (o widget ID e publico)
+- A configuracao do chat (horarios, agentes, mensagens automaticas) e feita diretamente no painel do JivoChat
 
