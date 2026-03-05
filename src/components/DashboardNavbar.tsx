@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { GraduationCap, LogOut, User, ChevronDown, Shield, Crown, Award } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
